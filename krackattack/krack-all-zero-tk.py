@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
 
 	global_log_level = max(ALL, global_log_level - args.debug)
 
-	print "\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]===\n"
+	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]===\n")
 	attack = KRAckAttack(args.nic_real_mon, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
