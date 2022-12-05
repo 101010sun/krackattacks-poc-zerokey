@@ -60,7 +60,7 @@ def log(level, msg, color=None, showtime=True):
 	if level == DEBUG   and color is None: color="gray"
 	if level == WARNING and color is None: color="orange"
 	if level == ERROR   and color is None: color="red"
-	print (datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m"
+	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
 
 
 #### Packet Processing Functions ####
@@ -141,7 +141,7 @@ class MitmSocket(L2Socket):
 def call_macchanger(iface, macaddr):
 	try:
 		subprocess.check_output(["macchanger", "-m", macaddr, iface])
-	except subprocess.CalledProcessError, ex:
+	except(subprocess.CalledProcessError, ex):
 		if not "It's the same MAC!!" in ex.output:
 			raise
 
