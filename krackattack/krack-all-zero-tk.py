@@ -140,8 +140,8 @@ class MitmSocket(L2Socket):
 
 def call_macchanger(iface, macaddr):
 	try:
-		subprocess.check_output(["macchanger", "-m", macaddr, iface])
-	except(subprocess.CalledProcessError, ex):
+		subprocess.check_output(["macchanger", macaddr, "-m", iface])
+	except subprocess.CalledProcessError as ex:
 		if not "It's the same MAC!!" in ex.output:
 			raise
 
