@@ -31,7 +31,7 @@ KRAckAttack(args.nic_real_mon, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid,
 - nic_rogue_mon: nic_rogue_mon
 
 krack-all-zero-tk.py KRAckAttack class confiure_interfaces()
-define wifi interfaces ! (need modify this)
+define wifi interfaces !
 1. iw <nic_real> set type monitor
 2. <nic_real_clientack> = <nic_real> + sta1
 3. iw <nic_real> interface add <nic_real_clientack> type managed
@@ -40,8 +40,10 @@ define wifi interfaces ! (need modify this)
 5. iw <nic_rogue_ap> interface add <nic_rogue_mon> type monitor
 6. iw <nic_rogue_mon> set type monitor
 
-nic_real_mon : MERCUSYS MW300UM
-nic_rogue_ap : TP-Link TL-WN722N V2
-nic_rogue_mon: TP-Link AC600
+- nic_real_mon : MERCUSYS MW300UM
+- nic_rogue_ap : TP-Link TL-WN722N V2
+- nic_rogue_mon: TP-Link AC600
 
+```
 python3 ./krack-all-zero-tk.py <nic_real_mon> <nic_rogue_ap> testnetwork --nic-rogue-mon <nic_rogue_mon> --target 60:45:cb:01:ce:4c
+```
