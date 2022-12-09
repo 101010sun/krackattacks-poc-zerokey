@@ -323,23 +323,22 @@ class NetworkConfig():
 
 	def from_beacon(self, p):
 		el = p[Dot11Elt]
-		print(el)
-
 		while isinstance(el, Dot11Elt):
+			el2 = el.info.decode()
 			if el.ID == IEEE_TLV_TYPE_SSID:
-				self.ssid = el.info
+				self.ssid = el2
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-				self.real_channel = ord(el.info[0])
+				self.real_channel = ord(el2[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
-				self.parse_wparsn(el.info)
+				self.parse_wparsn(el2)
 				self.wpavers |= 2
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x01":
-				self.parse_wparsn(el.info[4:])
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el2[:4] == "\x00\x50\xf2\x01":
+				self.parse_wparsn(el2[4:])
 				self.wpavers |= 1
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x02":
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el2[:4] == "\x00\x50\xf2\x02":
 				self.wmmenabled = 1
 
-			el = el.payload
+			el = el.payload.decode()
 
 	# TODO: Check that there also isn't a real AP of this network on 
 	# the returned channel (possible for large networks e.g. eduroam).
