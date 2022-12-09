@@ -305,7 +305,7 @@ class NetworkConfig():
 	# TODO: Improved parsing to handle more networks
 	def parse_wparsn(self, wparsn):
 		print('308: ', end='')
-		print(wparsn)
+		print(type(wparsn))
 		self.group_cipher = ord(wparsn[5])
 
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
