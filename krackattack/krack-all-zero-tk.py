@@ -306,7 +306,7 @@ class NetworkConfig():
 	def parse_wparsn(self, wparsn):
 		print('308: ', end='')
 		print(type(wparsn))
-		self.group_cipher = ord(wparsn.decode()[5])
+		self.group_cipher = ord(wparsn.decode('unicode_escape')[5])
 
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
