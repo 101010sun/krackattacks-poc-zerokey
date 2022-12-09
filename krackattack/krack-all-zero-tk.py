@@ -311,13 +311,13 @@ class NetworkConfig():
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
 		for i in range(num_pairwise):
-			self.pairwise_ciphers.add(ord(pos[3]))
+			self.pairwise_ciphers.add(ord(pos.decode('unicode_escape')[3]))
 			pos = pos[4:]
 
 		num_akm = struct.unpack("<H", pos[:2])[0]
 		pos = pos[2:]
 		for i in range(num_akm):
-			self.akms.add(ord(pos[3]))
+			self.akms.add(ord(pos.decode('unicode_escape')[3]))
 			pos = pos[4:]
 
 		if len(pos) >= 2:
