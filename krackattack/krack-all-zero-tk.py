@@ -342,8 +342,6 @@ class NetworkConfig():
 				self.wmmenabled = 1
 
 			el = el.payload
-			print('345: ', end='')
-			print(el.info)
 
 	# TODO: Check that there also isn't a real AP of this network on 
 	# the returned channel (possible for large networks e.g. eduroam).
