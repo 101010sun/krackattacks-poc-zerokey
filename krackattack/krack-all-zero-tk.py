@@ -325,6 +325,7 @@ class NetworkConfig():
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
 			el2 = el.info.decode()
+			print(el2)
 			if el.ID == IEEE_TLV_TYPE_SSID:
 				self.ssid = el2
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
