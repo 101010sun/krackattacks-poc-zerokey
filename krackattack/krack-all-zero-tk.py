@@ -333,10 +333,10 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
 				self.real_channel = ord(el.info.decode('unicode_escape')[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
-				self.parse_wparsn(el.info.decode('unicode_escape'))
+				self.parse_wparsn(el.info)
 				self.wpavers |= 2
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
-				self.parse_wparsn(el.info.decode('unicode_escape')[4:])
+				self.parse_wparsn(el.info[4:])
 				self.wpavers |= 1
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
 				self.wmmenabled = 1
