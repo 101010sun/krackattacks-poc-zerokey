@@ -508,6 +508,8 @@ class KRAckAttack():
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
 				ps = sniff(count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
+				print('512: ', end='')
+				print(ps)
 				if ps and len(ps) >= 1: break
 
 		if ps and len(ps) >= 1:
