@@ -339,7 +339,8 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el2[:4] == "\x00\x50\xf2\x02":
 				self.wmmenabled = 1
 
-			el = el.payload.decode()
+			el = el.payload
+			print(el)
 
 	# TODO: Check that there also isn't a real AP of this network on 
 	# the returned channel (possible for large networks e.g. eduroam).
