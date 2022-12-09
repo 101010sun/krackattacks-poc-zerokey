@@ -325,18 +325,18 @@ class NetworkConfig():
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
 			print('329: ', end='')
-			print(el.info.decode('ascii'))
+			print(el.info.decode('unicode_escape'))
 			if el.ID == IEEE_TLV_TYPE_SSID:
-				self.ssid = el.info.decode('ascii')
+				self.ssid = el.info.decode('unicode_escape')
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-				self.real_channel = ord(el.info.decode('ascii')[0])
+				self.real_channel = ord(el.info.decode('unicode_escape')[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
-				self.parse_wparsn(el.info.decode('ascii'))
+				self.parse_wparsn(el.info.decode('unicode_escape'))
 				self.wpavers |= 2
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('ascii')[:4] == "\x00\x50\xf2\x01":
-				self.parse_wparsn(el.info.decode('ascii')[4:])
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
+				self.parse_wparsn(el.info.decode('unicode_escape')[4:])
 				self.wpavers |= 1
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('ascii')[:4] == "\x00\x50\xf2\x02":
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
 				self.wmmenabled = 1
 
 			el = el.payload
