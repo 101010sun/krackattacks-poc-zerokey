@@ -324,7 +324,7 @@ class NetworkConfig():
 	def from_beacon(self, p):
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
-			el2 = el.info.decode(encoding='utf-8')
+			el2 = el.info.decode()
 			print('329: ', end='')
 			print(el2)
 			if el.ID == IEEE_TLV_TYPE_SSID:
@@ -342,7 +342,7 @@ class NetworkConfig():
 
 			el = el.payload
 			print('345: ', end='')
-			print(el)
+			print(el.decode())
 
 	# TODO: Check that there also isn't a real AP of this network on 
 	# the returned channel (possible for large networks e.g. eduroam).
