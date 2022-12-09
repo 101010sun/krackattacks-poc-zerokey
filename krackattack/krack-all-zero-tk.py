@@ -324,7 +324,7 @@ class NetworkConfig():
 	def from_beacon(self, p):
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
-			el2 = el.info.decode()
+			el2 = el.info.decode(encoding='utf-8')
 			print(el2)
 			if el.ID == IEEE_TLV_TYPE_SSID:
 				self.ssid = el2
