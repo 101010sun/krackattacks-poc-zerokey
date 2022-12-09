@@ -324,20 +324,17 @@ class NetworkConfig():
 	def from_beacon(self, p):
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
-			el2 = el.info.decode()
-			print('329: ', end='')
-			print(el2)
 			if el.ID == IEEE_TLV_TYPE_SSID:
-				self.ssid = el2
+				self.ssid = el.info.decode()
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-				self.real_channel = ord(el2[0])
+				self.real_channel = ord(el.info.decode()[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
-				self.parse_wparsn(el2)
+				self.parse_wparsn(el.info.decode())
 				self.wpavers |= 2
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el2[:4] == "\x00\x50\xf2\x01":
-				self.parse_wparsn(el2[4:])
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode()[:4] == "\x00\x50\xf2\x01":
+				self.parse_wparsn(el.info.decode()[4:])
 				self.wpavers |= 1
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el2[:4] == "\x00\x50\xf2\x02":
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode()[:4] == "\x00\x50\xf2\x02":
 				self.wmmenabled = 1
 
 			el = el.payload
