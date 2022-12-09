@@ -22,6 +22,7 @@ pip install --user mitm_channel_based
 pip install scapy==2.4.3
 pip install pycryptodome
 ```
+
 ## Description
 ```
 KRAckAttack(args.nic_real_mon, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)

@@ -102,7 +102,6 @@ class MitmSocket(L2Socket):
 			# Remove FCS if present
 			if ord(rawframe[pos]) & 0x10 != 0:
 				return Dot11(str(p[Dot11])[:-4])
-
 		return p[Dot11]
 
 	def recv(self, x=MTU):
@@ -281,14 +280,12 @@ def get_tlv_value(p, typee):
 		el = el.payload
 	return None
 
-
 #### Man-in-the-middle Code ####
 
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
 	if color is None and (Dot11Deauth in p or Dot11Disas in p): color="orange"
 	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
-
 
 class NetworkConfig():
 	def __init__(self):
@@ -382,7 +379,6 @@ wpa_passphrase=XXXXXXXX"""
 			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled)
 
-
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
 
@@ -454,7 +450,6 @@ class ClientState():
 
 	def attack_timeout(self, iv):
 		return self.is_state(ClientState.Attack_Started) and self.attack_time + 1.5 < time.time() and self.attack_max_iv < iv
-
 
 class KRAckAttack():
 	def __init__(self, nic_real, nic_rogue_ap, nic_rogue_mon, ssid, clientmac=None, dumpfile=None, cont_csa=False):
