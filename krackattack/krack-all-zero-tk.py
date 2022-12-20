@@ -511,7 +511,7 @@ class KRAckAttack():
 				log(DEBUG, "Listening on channel %d" % chan)
 				p = sniff(count=1, timeout=0.5, opened_socket=self.sock_real)
 				print('513: ', end='')
-				print(p)
+				print(type(p))
 				if p.haslayer(Dot11):
 					if p.type == 0 and p.subtype == 8:
 						print('p has layer')
