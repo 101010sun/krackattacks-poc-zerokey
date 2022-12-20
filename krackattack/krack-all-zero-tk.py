@@ -106,13 +106,13 @@ class MitmSocket(L2Socket):
 
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
-		if p == None or not Dot11 in p: return None
+		# if p == None or not Dot11 in p: return None
 		# if self.pcap: self.pcap.write(p)
 		
 		# Don't care about control frames
-		if p.type == 1:
-			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
-			return None
+		# if p.type == 1:
+		# 	log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
+		# 	return None
 
 		# 1. Radiotap monitor mode header is defined in ieee80211_add_tx_radiotap_header: TX_FLAGS, DATA_RETRIES, [RATE, MCS, VHT, ]
 		# 2. Radiotap header for normal received frames is defined in ieee80211_add_rx_radiotap_header: FLAGS, CHANNEL, RX_FLAGS, [...]
