@@ -275,7 +275,7 @@ def get_tlv_value(p, typee):
 	if not Dot11Elt in p: return None
 	print('277: ', end='')
 	el = p[Dot11Elt]
-	print(el.ID)
+	print(el.SSID)
 	while isinstance(el, Dot11Elt):
 		if el.ID == typee:
 			return el.info.decode()
