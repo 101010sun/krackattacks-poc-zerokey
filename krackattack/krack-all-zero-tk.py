@@ -106,6 +106,8 @@ class MitmSocket(L2Socket):
 
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
+		print('110: ', end='')
+		print(p)
 		if p == None or not Dot11 in p: return None
 		if self.pcap: self.pcap.write(p)
 
