@@ -3,12 +3,12 @@ all: build
 SRC=wpaspy.c
 
 build: $(SRC) setup.py
-	python setup.py build
+	python3 setup.py build
 
 install:
-	python setup.py install
+	python3 setup.py install
 
 clean:
-	python setup.py clean
+	python3 setup.py clean
 	rm -f *~
 	rm -rf build
