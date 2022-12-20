@@ -513,6 +513,7 @@ class KRAckAttack():
 				print('513: ', end='')
 				print(p)
 				for pp in p:
+					print('check p')
 					if pp.haslayer(Dot11):
 						if pp.type == 0 and pp.subtype == 8:
 							print('p has layer')
