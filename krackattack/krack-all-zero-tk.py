@@ -274,10 +274,10 @@ def append_csa(p, channel, count=1):
 def get_tlv_value(p, typee):
 	if not Dot11Elt in p: return None
 	el = p[Dot11Elt]
+	print('278: ', end='')
+	print(p.summary())
 	while isinstance(el, Dot11Elt):
 		if el.ID == typee:
-			print('280: ', end='')
-			print(el.payload)
 			return el.info.decode()
 		el = el.payload
 	return None
