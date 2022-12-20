@@ -107,7 +107,7 @@ class MitmSocket(L2Socket):
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
 		if p == None or not Dot11 in p: return None
-		if self.pcap: self.pcap.write(p)
+		# if self.pcap: self.pcap.write(p)
 		
 		# Don't care about control frames
 		if p.type == 1:
