@@ -511,7 +511,7 @@ class KRAckAttack():
 				log(DEBUG, "Listening on channel %d" % chan)
 				p = sniff(count=1, timeout=0.5, opened_socket=self.sock_real)
 				print('513: ', end='')
-				print(p.getlayer())
+				print(p.getlayer('Other'))
 				if Dot11Beacon in p:
 					print('p has layer')
 					if get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid:
