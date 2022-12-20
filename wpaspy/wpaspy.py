@@ -14,7 +14,7 @@ import select
 counter = 0
 
 class Ctrl:
-    def __init__(self, path, port=9877):
+    def __init__(self, path, port=9876):
         global counter
         self.started = False
         self.attached = False
