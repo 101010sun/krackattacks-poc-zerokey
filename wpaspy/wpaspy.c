@@ -44,8 +44,7 @@ static void wpaspy_close(struct wpaspy_obj *self)
 		self->ctrl = NULL;
 	}
 
-	if (self->ob_type)
-		self->ob_type->tp_free((PyObject *) self);
+	PyObject_Del(self);
 }
 
 
