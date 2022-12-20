@@ -915,8 +915,8 @@ class KRAckAttack():
 		if self.clientmac:
 			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
 		bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
-		self.sock_real.attach_filter(bpf)
-		self.sock_rogue.attach_filter(bpf)
+		# self.sock_real.attach_filter(bpf)
+		# self.sock_rogue.attach_filter(bpf)
 
 		# Set up a rouge AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("hostapd_rogue.conf", "w") as fp:
