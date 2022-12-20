@@ -511,14 +511,15 @@ class KRAckAttack():
 				log(DEBUG, "Listening on channel %d" % chan)
 				p = sniff(count=1, timeout=0.5, opened_socket=self.sock_real)
 				print('513: ', end='')
-				print(p.getlayer('Other'))
-				if Dot11Beacon in p:
-					print('p has layer')
-					if get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid:
-						print('p has ssid')
-						ps = p
-						print('521: ', end='')
-						print(ps)
+				print(p)
+				if p.haslayer(Dot11):
+					if p.type == 0 and p.subtype == 8:
+						print('p has layer')
+						if get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid:
+							print('p has ssid')
+							ps = p
+							print('521: ', end='')
+							print(ps.info)
 				# ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
 
