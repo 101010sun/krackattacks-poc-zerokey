@@ -109,7 +109,7 @@ class MitmSocket(L2Socket):
 		if p == None or not Dot11 in p: return None
 		if self.pcap: self.pcap.write(p)
 		print('110: ', end='')
-		print(p[Dot11Elt].ID)
+		print(p[Dot11Elt].info.decode())
 		# Don't care about control frames
 		if p.type == 1:
 			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
