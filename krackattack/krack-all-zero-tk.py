@@ -277,7 +277,7 @@ def get_tlv_value(p, typee):
 	while isinstance(el, Dot11Elt):
 		if el.ID == typee:
 			print('280: ', end='')
-			print(el.payload.info)
+			print(el.payload)
 			return el.info.decode()
 		el = el.payload
 	return None
