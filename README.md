@@ -55,3 +55,7 @@ define wifi interfaces !
 ```
 python3 ./krack-all-zero-tk.py <nic_real_mon> <nic_rogue_ap> testnetwork --nic-rogue-mon <nic_rogue_mon> --target 60:45:cb:01:ce:4c
 ```
+
+```
+sudo ./hostapd hostapd.conf
+```
