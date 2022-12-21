@@ -57,7 +57,7 @@ class Ctrl:
                 self.cookie = reply
                 self.port = port
             except:
-                print("connect exception ", path, str(port))
+                print("connect exception", path, str(port))
                 if self.s != None:
                     self.s.close()
                 raise

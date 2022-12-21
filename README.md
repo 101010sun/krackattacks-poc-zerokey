@@ -23,7 +23,7 @@ pip install scapy==2.4.3
 pip install pycryptodome
 ```
 
-set all the network interface to monitor
+set the nic_rogue_ap, nic_rogue_mon interface to monitor
 ```
 sudo ifconfig wlan0 down
 sudo iwconfig wlan0 mode Monitor
