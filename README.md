@@ -14,13 +14,20 @@ Then you can exece this script. See [our video](https://youtu.be/Oh4WURZoR98?t=4
 intall the following dependencies on Kali Linux:
  ```
 $sudo apt update
-$sudo apt install libnl-3-dev libnl-genl-3-dev macchanger pkg-config libssl-dev net-tools git sysfsutils pip
+$sudo apt install libnl-3-dev libnl-genl-3-dev macchanger pkg-config libssl-dev net-tools git sysfsutils pip tcpdump
 ```
 install the following python package:
 ```
 pip install --user mitm_channel_based
 pip install scapy==2.4.3
 pip install pycryptodome
+```
+
+set all the network interface to monitor
+```
+sudo ifconfig wlan0 down
+sudo iwconfig wlan0 mode Monitor
+sudo ifconfig wlan0 up
 ```
 
 ## Description
