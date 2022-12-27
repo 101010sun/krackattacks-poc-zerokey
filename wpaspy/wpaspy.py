@@ -45,6 +45,8 @@ class Ctrl:
         else:
             try:
                 self.s = None
+                print(path)
+                print(port)
                 ai_list = socket.getaddrinfo(path, port, socket.AF_INET, socket.SOCK_DGRAM)
                 for af, socktype, proto, cn, sockaddr in ai_list:
                     self.sockaddr = sockaddr
