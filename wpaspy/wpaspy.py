@@ -30,6 +30,7 @@ class Ctrl:
             else:
                 self.udp = True
         except:
+            print('except')
             self.udp = True
 
         if not self.udp:
