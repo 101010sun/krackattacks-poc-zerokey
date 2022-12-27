@@ -23,6 +23,8 @@ class Ctrl:
 
         try:
             mode = os.stat(path).st_mode
+            print(mode)
+            print(stat.S_ISSOCK(mode))
             if stat.S_ISSOCK(mode):
                 self.udp = False
             else:
