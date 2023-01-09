@@ -295,7 +295,7 @@ class NetworkConfig():
 		self.wpavers = 0
 		self.pairwise_ciphers = set()
 		self.akms = set()
-		self.wmmenabled = 1
+		self.wmmenabled = 0
 		self.capab = 0
 
 	def is_wparsn(self):
