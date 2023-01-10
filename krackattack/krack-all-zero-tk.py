@@ -106,6 +106,8 @@ class MitmSocket(L2Socket):
 
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
+		print('110: ', end='')
+		print(p)
 		if p == None or not Dot11 in p: return None
 		# if self.pcap: self.pcap.write(p)
 		
@@ -659,8 +661,6 @@ class KRAckAttack():
 
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
-		print('663: ')
-		print(p)
 		if p == None: return
 
 		# 1. Handle frames sent TO the real AP
