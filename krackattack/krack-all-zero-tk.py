@@ -108,7 +108,12 @@ class MitmSocket(L2Socket):
 		p = L2Socket.recv(self, x)
 		print('110: ', end='')
 		print(p)
-		if p == None or not Dot11 in p: return None
+		if p == None: 
+			print('p is none')
+			return None
+		if not Dot11 in p:
+			print('no Dot11 in p')
+			return None
 		# if self.pcap: self.pcap.write(p)
 		
 		# Don't care about control frames
