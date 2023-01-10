@@ -98,7 +98,7 @@ class Ctrl:
         if self.attached:
             return None
         res = self.request("ATTACH")
-        if "OK" in res:
+        if "OK".encode() in res:
             self.attached = True
             return None
         raise Exception("ATTACH failed")
@@ -109,7 +109,7 @@ class Ctrl:
         while self.pending():
             ev = self.recv()
         res = self.request("DETACH")
-        if "FAIL" not in res:
+        if "FAIL".encode() not in res:
             self.attached = False
             return None
         raise Exception("DETACH failed")
@@ -118,7 +118,7 @@ class Ctrl:
         if self.attached:
             try:
                 self.detach()
-            except(Exception, e):
+            except (Exception, e):
                 # Need to ignore this to allow the socket to be closed
                 self.attached = False
         self.request("TERMINATE")
