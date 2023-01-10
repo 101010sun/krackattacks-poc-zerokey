@@ -826,9 +826,9 @@ class KRAckAttack():
 		elif line.startswith(">>> ".encode()):
 			log(DEBUG, "Rogue hostapd: " + line[4:].strip())
 		# This is a bit hacky but very usefull for quick debugging
-		elif "fc=0xc0" in line:
+		elif "fc=0xc0".encode() in line:
 			log(WARNING, "Rogue hostapd: " + line.strip())
-		elif "sta_remove" in line or "Add STA" in line or "disassoc cb" in line or "disassocation: STA" in line:
+		elif "sta_remove".encode() in line or "Add STA".encode() in line or "disassoc cb".encode() in line or "disassocation: STA".encode() in line:
 			log(DEBUG, "Rogue hostapd: " + line.strip())
 		else:
 			log(ALL, "Rogue hostapd: " + line.strip())
