@@ -831,7 +831,7 @@ class KRAckAttack():
 		elif "sta_remove".encode() in line or "Add STA".encode() in line or "disassoc cb".encode() in line or "disassocation: STA".encode() in line:
 			log(DEBUG, "Rogue hostapd: " + line.strip())
 		else:
-			log(ALL, "Rogue hostapd: " + line.strip())
+			log(ALL, "Rogue hostapd: " + line.strip().decode())
 
 		self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line)
 
