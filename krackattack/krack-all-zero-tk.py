@@ -821,9 +821,9 @@ class KRAckAttack():
 			log(ERROR, "Rogue hostapd instances unexpectedly closed")
 			quit(1)
 
-		if line.startswith(">>>> "):
+		if line.startswith(">>>> ".encode()):
 			log(STATUS, "Rogue hostapd: " + line[5:].strip())
-		elif line.startswith(">>> "):
+		elif line.startswith(">>> ".encode()):
 			log(DEBUG, "Rogue hostapd: " + line[4:].strip())
 		# This is a bit hacky but very usefull for quick debugging
 		elif "fc=0xc0" in line:
