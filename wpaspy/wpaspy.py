@@ -86,9 +86,9 @@ class Ctrl:
 
     def request(self, cmd, timeout=10):
         if self.udp:
-            self.s.sendto(self.cookie + bytes(cmd), self.sockaddr)
+            self.s.sendto(self.cookie + cmd, self.sockaddr)
         else:
-            self.s.send(bytes(cmd))
+            self.s.send(cmd)
         [r, w, e] = select.select([self.s], [], [], timeout)
         if r:
             return self.s.recv(4096)
