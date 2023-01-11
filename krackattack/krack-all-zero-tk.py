@@ -131,7 +131,7 @@ class MitmSocket(L2Socket):
 		# Hack: ignore frames that we just injected and are echoed back by the kernel. Note that the More Data flag also
 		#	allows us to detect cross-channel frames (received due to proximity of transmissors on different channel)
 		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or self.radiotap_possible_injection):
-			log(DEBUG, "%s: ignoring echoed frame %s (0x%02X, present=%08X, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
+			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
 			return None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
