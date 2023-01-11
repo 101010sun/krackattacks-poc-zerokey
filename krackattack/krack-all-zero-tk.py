@@ -199,7 +199,7 @@ def get_eapol_msgnum(p):
 	if not EAPOL in p: return 0
 
 	keyinfo = str(p[EAPOL])[5:7]
-	flags = struct.unpack(">H", keyinfo)[0]
+	flags = struct.unpack(">H".encode(), keyinfo)[0]
 	if flags & FLAG_PAIRWISE:
 		# 4-way handshake
 		if flags & FLAG_ACK:
