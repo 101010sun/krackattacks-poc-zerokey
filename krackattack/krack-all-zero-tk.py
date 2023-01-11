@@ -374,7 +374,7 @@ wmm_enabled={wmmenabled}
 wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
-wpa_passphrase=abcdefgh"""
+wpa_passphrase=XXXXXXXX"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
