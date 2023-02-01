@@ -857,7 +857,7 @@ class KRAckAttack():
 
 		# 2. Configure monitor mode on interfaces
 		subprocess.check_output(["ifconfig", self.nic_real, "down"])
-		subprocess.check_output(["iw", self.nic_real, "set", "type", "monitor"])
+		subprocess.check_output(["iwconfig", self.nic_real, "mode", "managed"])
 		if self.nic_rogue_mon is None:
 			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
 			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "monitor"])
@@ -866,7 +866,7 @@ class KRAckAttack():
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
-			subprocess.check_output(["iw", self.nic_rogue_mon, "set", "type", "monitor"])
+			subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 
 
