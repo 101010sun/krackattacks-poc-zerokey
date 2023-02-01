@@ -41,7 +41,7 @@ class Ctrl:
             self.s.bind(self.local)
             try:
                 self.s.connect(self.dest)
-            except(Exception, e):
+            except Exception as e :
                 self.s.close()
                 os.unlink(self.local)
                 raise
