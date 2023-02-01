@@ -865,9 +865,10 @@ class KRAckAttack():
 			# sequence of commands to assure the virtual interface is registered as a 802.11 monitor interface.
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
-			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
-			subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
-			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
+			
+		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
+		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
+		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 
 
 		# 3. Configure interface on real channel to ACK frames
