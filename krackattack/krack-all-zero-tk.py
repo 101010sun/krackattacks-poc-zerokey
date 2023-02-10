@@ -934,7 +934,7 @@ class KRAckAttack():
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
-		time.sleep(1)
+		time.sleep(5)
 
 		self.hostapd_ctrl = Ctrl("../hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
