@@ -75,7 +75,7 @@ class Ctrl:
         if self.attached:
             try:
                 self.detach()
-            except(Exception, e):
+            except Exception as e:
                 # Need to ignore this allow the socket to be closed
                 self.attached = False
                 pass
@@ -119,7 +119,7 @@ class Ctrl:
         if self.attached:
             try:
                 self.detach()
-            except (Exception, e):
+            except Exception as e:
                 # Need to ignore this to allow the socket to be closed
                 self.attached = False
         self.request("TERMINATE")
