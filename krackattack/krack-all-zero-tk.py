@@ -935,7 +935,7 @@ class KRAckAttack():
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
-		time.sleep(5)
+		time.sleep(10)
 
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
