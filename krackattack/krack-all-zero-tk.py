@@ -357,7 +357,7 @@ class NetworkConfig():
 	def write_config(self, iface):
 		TEMPLATE = """
 ctrl_interface=/root/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
-ctrl_interface_group=0
+ctrl_interface_group=root
 
 interface={iface}
 ssid={ssid}
