@@ -1,3 +1,3 @@
 from scapy.all import *
 
-sniff(iface=['wlan1'], prn=lambda x: x.sniffed_on+": "+x.summary())
+sniff(iface=['wlan1'], prn=lambda x:x.sprintf("{IP:%IP.src% -> %IP.dst%\n}{Raw:%Raw.load%\n}"))
