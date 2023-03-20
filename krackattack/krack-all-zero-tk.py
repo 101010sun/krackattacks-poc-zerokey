@@ -921,7 +921,7 @@ class KRAckAttack():
 		bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
 		if self.clientmac:
 			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
-		bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
+		# bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
 		self.sock_real.attach_filter(bpf)
 		self.sock_rogue.attach_filter(bpf)
 
