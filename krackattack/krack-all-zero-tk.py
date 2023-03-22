@@ -646,9 +646,9 @@ class KRAckAttack():
 
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
-		print(p.addr1, p.addr2)
 		if p == None: return
 
+		print(p.addr1, p.addr2)
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -740,9 +740,8 @@ class KRAckAttack():
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
-		print(p.addr1, p.addr2)
 		if p == None: return
-
+		print(p.addr1, p.addr2)
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
