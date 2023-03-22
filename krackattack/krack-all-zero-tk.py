@@ -668,8 +668,6 @@ class KRAckAttack():
 
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
-		print('671', end = '')
-		print(p.decode())
 		if p == None: return
 
 		# 1. Handle frames sent TO the real AP
@@ -763,8 +761,6 @@ class KRAckAttack():
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
-		print('766', end = '')
-		print(p.decode())
 		if p == None: return
 
 		# 1. Handle frames sent BY the rouge AP
