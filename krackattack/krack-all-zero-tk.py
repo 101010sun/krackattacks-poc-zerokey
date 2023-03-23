@@ -745,6 +745,7 @@ class KRAckAttack():
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
+		if p == None: return
 
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
