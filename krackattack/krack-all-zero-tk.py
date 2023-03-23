@@ -119,6 +119,12 @@ class MitmSocket(L2Socket):
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
+		print(p[Dot11].addr1, p[Dot11].addr2, p[Dot11].addr3, p[Dot11].addr4, end=' channel: ')
+		if not(get_tlv_value(p[Dot11], IEEE_TLV_TYPE_CHANNEL) == None):
+			print(ord(get_tlv_value(p[Dot11], IEEE_TLV_TYPE_CHANNEL)))
+		else:
+			print('None')
+
 		# Strip the FCS if present, and drop the RadioTap header
 		return self._strip_fcs(p)
 
@@ -648,12 +654,6 @@ class KRAckAttack():
 		p = self.sock_real.recv()
 		if p == None: return
 
-		print('647. ')
-		print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
-		if not(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL) == None):
-			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
-		else:
-			print('None')
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -745,14 +745,6 @@ class KRAckAttack():
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
-		if p == None: return
-
-		print('743. ')
-		print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
-		if not(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL) == None): 
-			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
-		else:
-			print('None')
 
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
