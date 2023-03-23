@@ -119,14 +119,9 @@ class MitmSocket(L2Socket):
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
-		print(p[Dot11].addr1, p[Dot11].addr2, p[Dot11].addr3, p[Dot11].addr4, end=' channel: ')
-		if not(get_tlv_value(p[Dot11], IEEE_TLV_TYPE_CHANNEL) == None):
-			print(ord(get_tlv_value(p[Dot11], IEEE_TLV_TYPE_CHANNEL)))
-		else:
-			print('None')
-
-		# Strip the FCS if present, and drop the RadioTap header
-		return self._strip_fcs(p)
+		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
+		# return self._strip_fcs(p)
+		return p[Dot11]
 
 	def close(self):
 		# if self.pcap: self.pcap.close()
