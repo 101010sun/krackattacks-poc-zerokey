@@ -650,7 +650,10 @@ class KRAckAttack():
 
 		print('647. ')
 		print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
-		print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
+		if not(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == None):
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
+		else:
+			print('None')
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -746,7 +749,10 @@ class KRAckAttack():
 
 		print('743. ')
 		print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
-		print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
+		if not(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL) == None): 
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
+		else:
+			print('None')
 
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
