@@ -647,6 +647,10 @@ class KRAckAttack():
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
 		if p == None: return
+
+		if p.addr2 == self.apmac or p.addr4 == self.apmac:
+			print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -691,8 +695,6 @@ class KRAckAttack():
 		# 2. Handle frames sent BY the real AP
 		elif p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the rogue AP.
-			print(p.addr1, p.addr2, end='  channel: ')
-			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
 				self.last_real_beacon = time.time()
 
@@ -741,6 +743,11 @@ class KRAckAttack():
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
 		if p == None: return
+
+		if p.addr2 == self.apmac or p.addr4 == self.apmac:
+			print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
+			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
+
 		# 1. Handle frames sent BY the rouge AP
 		if p.addr2 == self.apmac:
 			print(p.addr1, p.addr2, end='  channel: ')
