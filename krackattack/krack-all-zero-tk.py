@@ -650,7 +650,7 @@ class KRAckAttack():
 
 		print('647. ')
 		print(p.addr1, p.addr2, p.addr3, p.addr4, end=' channel: ')
-		if not(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == None):
+		if not(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL) == None):
 			print(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)))
 		else:
 			print('None')
