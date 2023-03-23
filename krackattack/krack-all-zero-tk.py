@@ -87,6 +87,8 @@ class MitmSocket(L2Socket):
 				pos += 8
 			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
+				print('90: ', end='')
+				print(Dot11(str(p[Dot11])[:-4]))
 				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
 
