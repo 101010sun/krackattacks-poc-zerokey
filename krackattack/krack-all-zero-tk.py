@@ -14,13 +14,6 @@ import sys, os, socket, struct, time, argparse, heapq, subprocess, atexit, selec
 from datetime import datetime
 from wpaspy import Ctrl
 
-# TODO:
-# - Show "-- forwarding" when we haven't confirmed MitM on rouge channel, and "-- MitM'ing" when on rouge channel
-# - If EAPOL-Msg4 has been received on the real channel, the MitM attack has failed (maybe deauthenticate then)
-# - Detect usage off all-zero key by decrypting frames (so we can miss some frames safely)
-# - Handle forwarded messages that are too long (= stupid Linux kernel bug)
-# - Prefix Warning or Error messages? What if they are just colored?
-
 IEEE_TLV_TYPE_SSID    = 0
 IEEE_TLV_TYPE_CHANNEL = 3
 IEEE_TLV_TYPE_RSN     = 48
@@ -31,7 +24,6 @@ IEEE80211_RADIOTAP_RATE = (1 << 2)
 IEEE80211_RADIOTAP_CHANNEL = (1 << 3)
 IEEE80211_RADIOTAP_TX_FLAGS = (1 << 15)
 IEEE80211_RADIOTAP_DATA_RETRIES = (1 << 17)
-
 
 #### Basic output and logging functionality ####
 
@@ -87,8 +79,6 @@ class MitmSocket(L2Socket):
 				pos += 8
 			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
-				print('90: ', end='')
-				print(Dot11(str(p[Dot11])[:-4]))
 				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
 
