@@ -78,9 +78,6 @@ class MitmSocket(L2Socket):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
 		if p[RadioTap].present & 2 != 0:
-			print('80: ', end='')
-			print(p[RadioTap].present)
-			print(type(p[RadioTap].present))
 			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
 			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
