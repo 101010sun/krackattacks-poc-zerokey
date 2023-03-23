@@ -79,7 +79,7 @@ class MitmSocket(L2Socket):
 		# .present is flagsfield
 		if p[RadioTap].present & 2 != 0:
 			print('80: ', end='')
-			print(p[RadioTap].present)
+			print(p[RadioTap].present & 2)
 			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
 			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
