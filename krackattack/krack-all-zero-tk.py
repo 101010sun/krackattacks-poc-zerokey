@@ -812,7 +812,7 @@ class KRAckAttack():
 		else:
 			log(ALL, "Rogue hostapd: " + line.strip().decode())
 
-		self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line.decode())
+		# self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line.decode())
 
 	def configure_interfaces(self):
 		# 0. Warn about common mistakes
