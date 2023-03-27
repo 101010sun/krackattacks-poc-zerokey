@@ -2,8 +2,8 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import subprocess
-from krackattack.helper import logging
-from krackattack.helper import packetProcess
+from .helper import logging
+from .helper import packetProcess
 
 #### Man-in-the-middle Code ####
 class MitmSocket(L2Socket):

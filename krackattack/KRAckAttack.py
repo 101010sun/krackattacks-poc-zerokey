@@ -6,8 +6,8 @@ from datetime import datetime
 from wpaspy import Ctrl
 from mitmSocket import MitmSocket
 from networkConfig import NetworkConfig
-from krackattack.helper import logging
-from krackattack.helper import packetProcess
+from .helper import logging
+from .helper import packetProcess
 from clientState import ClientState
 
 class KRAckAttack():

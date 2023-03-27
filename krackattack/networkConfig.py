@@ -2,8 +2,8 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import struct
-from krackattack.helper import template
-from krackattack.helper import logging
+from .helper import template
+from .helper import logging
 
 # 紀錄網路的config
 class NetworkConfig():

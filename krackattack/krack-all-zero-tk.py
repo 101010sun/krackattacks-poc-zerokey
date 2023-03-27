@@ -11,7 +11,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import argparse, atexit, textwrap
 from KRAckAttack import KRAckAttack
-from krackattack.helper import logging
+from .helper import logging
 
 def cleanup():
 	attack.stop()

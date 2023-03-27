@@ -2,7 +2,7 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import struct, subprocess
-from krackattack.helper import logging
+from . import logging
 
 #### Packet Processing Functions ####
 

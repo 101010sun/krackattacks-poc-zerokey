@@ -2,8 +2,8 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import time
-from krackattack.helper import logging
-from krackattack.helper import packetProcess
+from .helper import logging
+from .helper import packetProcess
 
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
