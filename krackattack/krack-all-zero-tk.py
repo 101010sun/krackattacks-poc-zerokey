@@ -844,7 +844,7 @@ class KRAckAttack():
 		if self.clientmac:
 				self.nic_real_clientack = self.nic_real + "sta1"
 				subprocess.check_output(["iw", self.nic_real, "interface", "add", self.nic_real_clientack, "type", "managed"])
-				print(datetime.datetime.now()) # -- debug
+				print(datetime.now()) # -- debug
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
