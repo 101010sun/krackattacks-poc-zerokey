@@ -742,7 +742,7 @@ class KRAckAttack():
 			if self.clientmac is not None and p.addr1 == self.clientmac:
 				# print_rx(INFO, "Rogue channel", p) -- debug
 			# And display all frames sent to a MitM'ed client
-			elif p.addr1 in self.clients:
+			# elif p.addr1 in self.clients:
 				# print_rx(INFO, "Rogue channel", p) -- debug
 
 		# 2. Handle frames sent TO the AP
