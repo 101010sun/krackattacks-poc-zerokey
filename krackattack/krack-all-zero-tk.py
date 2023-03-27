@@ -79,7 +79,8 @@ class MitmSocket(L2Socket):
 			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
 				print(p[Dot11FCS])
-				return Dot11(str(p[Dot11])[:-4])
+				# return Dot11(str(p[Dot11])[:-4])
+				return RadioTap((p.copy(), chop = True, order = 'last', output = 'str', qty = 4))
 		return p[Dot11]
 
 	def recv(self, x=MTU):
