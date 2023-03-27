@@ -1,5 +1,5 @@
 import logging
-outputlog.getLogger("scapy.runtime").setLevel(outputlog.ERROR)
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import time, heapq, subprocess, select, sys
 from datetime import datetime
