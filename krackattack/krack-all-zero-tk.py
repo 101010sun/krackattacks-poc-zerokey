@@ -884,6 +884,7 @@ class KRAckAttack():
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
+		print(datetime.now()) # -- debug
 		if self.nic_real_clientack: subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# FIXME: Set BFP filters to increase performance, can't set suceessful.
