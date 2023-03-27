@@ -638,7 +638,7 @@ class KRAckAttack():
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
 		if p == None: 
-			print_rx(INFO, "debug: ", 'None')
+			print("debug: none")
 			return
 
 		print_rx(INFO, "debug: ", p)
