@@ -9,9 +9,10 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
-import argparse, atexit, textwrap
+import argparse, atexit, textwrap, sys
 from KRAckAttack import KRAckAttack
-from .helper import logging
+sys.path.append('helper')
+import outputlog
 
 def cleanup():
 	attack.stop()
@@ -44,7 +45,7 @@ if __name__ == "__main__":
 	global_log_level = max(ALL, global_log_level - args.debug)
 
 	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
-	logging.setGroup(args.group)
+	outputlog.setGroup(args.group)
 	attack = KRAckAttack(args.nic_real_mon, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.password, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup())
 	attack.run(strict_echo_test=args.strict_echo_test)

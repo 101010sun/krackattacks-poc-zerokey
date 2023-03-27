@@ -1,9 +1,10 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
-import subprocess
-from .helper import logging
-from .helper import packetProcess
+import subprocess, sys
+sys.path.append('articles')
+import outputlog
+import packetProcess
 
 #### Man-in-the-middle Code ####
 class MitmSocket(L2Socket):
@@ -18,7 +19,7 @@ class MitmSocket(L2Socket):
 		subprocess.check_output(["iw", self.iface, "set", "channel", str(channel)])
 
 	def attach_filter(self, bpf):
-		logging.log(logging.DEBUG, "Attaching filter to %s: <%s>" % (self.iface, bpf))
+		outputlog.log(outputlog.DEBUG, "Attaching filter to %s: <%s>" % (self.iface, bpf))
 		attach_filter(self.ins, bpf, self.iface)
 
 	def send(self, p):
@@ -26,7 +27,7 @@ class MitmSocket(L2Socket):
 		p[Dot11].FCfield |= 0x20
 		L2Socket.send(self, RadioTap()/p)
 		if self.pcap: self.pcap.write(RadioTap()/p)
-		logging.log(logging.DEBUG, "%s: Injected frame %s" % (self.iface, packetProcess.dot11_to_str(p)))
+		outputlog.log(outputlog.DEBUG, "%s: Injected frame %s" % (self.iface, packetProcess.dot11_to_str(p)))
 
 	def _strip_fcs(self, p):
 		# radiotap header flags 0x00...0: no used FCS failed
@@ -53,7 +54,7 @@ class MitmSocket(L2Socket):
 		# if self.pcap: self.pcap.write(p)
 		# Don't care about control frames
 		if p.type == 1:
-			logging.log(logging.ALL, "%s: ignoring control frame %s" % (self.iface, packetProcess.dot11_to_str(p)))
+			outputlog.log(outputlog.ALL, "%s: ignoring control frame %s" % (self.iface, packetProcess.dot11_to_str(p)))
 			return None
 
 		# 1. Radiotap monitor mode header is defined in ieee80211_add_tx_radiotap_header: TX_FLAGS, DATA_RETRIES, [RATE, MCS, VHT, ]
@@ -62,15 +63,15 @@ class MitmSocket(L2Socket):
 		#
 		# Conclusion: if channel flag is not present, but rate flag is included, then this could be an echoed injected frame.
 		# Warning: this check fails to detect injected frames captured by the other interface (due to proximity of transmittors and capture effect)
-		radiotap_possible_injection = (p[RadioTap].present & logging.IEEE80211_RADIOTAP_CHANNEL == 0) and not (p[RadioTap].present & logging.IEEE80211_RADIOTAP_RATE == 0)
+		radiotap_possible_injection = (p[RadioTap].present & outputlog.IEEE80211_RADIOTAP_CHANNEL == 0) and not (p[RadioTap].present & outputlog.IEEE80211_RADIOTAP_RATE == 0)
 
 		# Hack: ignore frames that we just injected and are echoed back by the kernel. Note that the More Data flag also
 		#	allows us to detect cross-channel frames (received due to proximity of transmissors on different channel)
 		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or radiotap_possible_injection):
-			logging.log(logging.DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, packetProcess.dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
+			outputlog.log(outputlog.DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, packetProcess.dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
 			return None
 		else:
-			logging.log(logging.ALL, "%s: Received frame: %s" % (self.iface, packetProcess.dot11_to_str(p)))
+			outputlog.log(outputlog.ALL, "%s: Received frame: %s" % (self.iface, packetProcess.dot11_to_str(p)))
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
 		return self._strip_fcs(p)

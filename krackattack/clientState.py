@@ -1,9 +1,10 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
-import time
-from .helper import logging
-from .helper import packetProcess
+import time, sys
+sys.path.append('helper')
+import outputlog
+import packetProcess
 
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
@@ -34,13 +35,13 @@ class ClientState():
 
 
 	def update_state(self, state):
-		logging.log(logging.DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
+		outputlog.log(outputlog.DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
 		self.state = state
 
 	def mark_got_mitm(self):
 		if self.state <= ClientState.Connecting:
 			self.state = ClientState.GotMitm
-			logging.log(logging.STATUS, "Established MitM position against client %s (moved to state %d)" % (self.macaddr, self.state),
+			outputlog.log(outputlog.STATUS, "Established MitM position against client %s (moved to state %d)" % (self.macaddr, self.state),
 				color="green", showtime=False)
 
 	def is_state(self, state):
@@ -48,7 +49,7 @@ class ClientState():
 
 	# TODO: Also forward when attack has failed?
 	def should_forward(self, p):
-		if logging.group:
+		if outputlog.group:
 			# Forwarding rules when attacking the group handshake
 			return True
 

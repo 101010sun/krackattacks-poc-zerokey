@@ -2,7 +2,7 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 import struct, subprocess
-from . import logging
+import outputlog
 
 #### Packet Processing Functions ####
 
@@ -37,7 +37,7 @@ def dot11_get_seqnum(p):
 def dot11_get_iv(p):
 	"""Scapy can't handle Extended IVs, so do this properly ourselves"""
 	if not p.haslayer(Dot11WEP):
-		logging.log(logging.ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
+		outputlog.log(outputlog.ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
 
 	wep = p[Dot11WEP]
@@ -126,7 +126,7 @@ def construct_csa(channel, count=1):
 
 	# Contruct the IE
 	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
-	return Dot11Elt(ID = logging.IEEE_TLV_TYPE_CSA, info = payload)
+	return Dot11Elt(ID = outputlog.IEEE_TLV_TYPE_CSA, info = payload)
 
 def append_csa(p, channel, count=1):
 	p = p.copy()
@@ -153,5 +153,5 @@ def get_tlv_value(p, typee):
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
 	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
-	logging(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
+	outputlog.log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
 
