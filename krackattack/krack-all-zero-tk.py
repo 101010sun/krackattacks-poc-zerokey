@@ -115,7 +115,7 @@ class MitmSocket(L2Socket):
 		return p[Dot11]
 
 	def close(self):
-		# if self.pcap: self.pcap.close()
+		if self.pcap: self.pcap.close()
 		super(MitmSocket, self).close()
 
 def call_macchanger(iface, macaddr):
