@@ -67,7 +67,7 @@ class MitmSocket(L2Socket):
 	def _strip_fcs(self, p):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
-		print(p[RadioTap].present)
+
 		if p[RadioTap].present & 2 != 0:
 			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
@@ -78,6 +78,7 @@ class MitmSocket(L2Socket):
 				pos += 8
 			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
+				print(str(p[Dot11])[:-4])
 				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
 
