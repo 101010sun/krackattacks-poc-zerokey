@@ -41,9 +41,7 @@ def log(level, msg, color=None, showtime=True):
 	if level == ERROR   and color is None: color="red"
 	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
 
-
-#### Packet Processing Functions ####
-
+#### Man-in-the-middle Code ####
 class MitmSocket(L2Socket):
 	def __init__(self, dumpfile=None, strict_echo_test=False, **kwargs):
 		super(MitmSocket, self).__init__(**kwargs)
@@ -104,14 +102,15 @@ class MitmSocket(L2Socket):
 
 		# Hack: ignore frames that we just injected and are echoed back by the kernel. Note that the More Data flag also
 		#	allows us to detect cross-channel frames (received due to proximity of transmissors on different channel)
-		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or self.radiotap_possible_injection):
+		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or radiotap_possible_injection):
 			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
 			return None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
-		return self._strip_fcs(p)
+		# return self._strip_fcs(p)
+		return p[Dot11]
 
 	def close(self):
 		# if self.pcap: self.pcap.close()
@@ -138,6 +137,9 @@ def set_monitor_ack_address(iface, macaddr, sta_suffix=None):
 	subprocess.check_output(["iw", iface, "interface", "add", sta_iface, "type", "managed"])
 	call_macchanger(sta_iface, macaddr)
 	subprocess.check_output(["ifconfig", sta_iface, "up"])
+
+
+#### Packet Processing Functions ####
 
 def xorstr(lhs, rhs):
 	return "".join([chr(ord(lb) ^ ord(rb)) for lb, rb in zip(lhs, rhs)])
@@ -260,8 +262,6 @@ def get_tlv_value(p, typee):
 			return el.info.decode()
 		el = el.payload
 	return None
-
-#### Man-in-the-middle Code ####
 
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
@@ -964,7 +964,6 @@ class KRAckAttack():
 			self.hostapd_log.close()
 		if self.sock_real: self.sock_real.close()
 		if self.sock_rogue: self.sock_rogue.close()
-
 
 def cleanup():
 	attack.stop()
