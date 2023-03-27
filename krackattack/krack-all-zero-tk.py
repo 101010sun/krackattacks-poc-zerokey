@@ -80,7 +80,7 @@ class MitmSocket(L2Socket):
 			if ord(rawframe[pos]) & 0x10 != 0:
 				print(p[Dot11FCS])
 				# return Dot11(str(p[Dot11])[:-4])
-				return RadioTap((p.copy(), chop = True, order = 'last', output = 'str', qty = 4))
+				return RadioTap(pt.byteRip(p.copy(), chop = True, order = 'last', output = 'str', qty = 4))
 		return p[Dot11]
 
 	def recv(self, x=MTU):
