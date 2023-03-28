@@ -150,8 +150,11 @@ def dot11_get_iv(p):
 	else:
 		# 解析 WPA KEY ID (b'\x00\x00\x00\x00')
 		print('Debug: ', end='') # !--
-		print(len(wep.iv))
-		return (wep.iv[0]) + ((wep.iv[1])<< 8) + ((wep.iv[2]) << 16)
+		print(wep.iv)
+		resultIV = 0
+		for i in range(0, len(wep.iv)):
+			resultIV += (wep.iv[i] << (8*i))
+		return resultIV
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
