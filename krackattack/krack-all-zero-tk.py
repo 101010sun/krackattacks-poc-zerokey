@@ -111,6 +111,7 @@ class MitmSocket(L2Socket):
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
 		result = self._strip_fcs(p)
+		print_rx(INFO, "Debug: ", result) # !-- debug
 		return result
 
 	def close(self):
