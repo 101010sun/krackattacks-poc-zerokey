@@ -721,7 +721,7 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Real channel " + str(ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL))), p)
+			print_rx(INFO, "Real channel ", p)
 
 	def handle_rx_roguechan(self):
 		p = self.sock_rogue.recv()
