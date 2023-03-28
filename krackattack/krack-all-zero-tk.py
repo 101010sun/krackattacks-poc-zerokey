@@ -140,20 +140,15 @@ def dot11_get_seqnum(p):
 	return p[Dot11].SC >> 4
 
 def dot11_get_iv(p):
-	"""Scapy can't handle Extended IVs, so do this properly ourselves"""
 	if not p.haslayer(Dot11WEP):
 		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
 	wep = p[Dot11WEP]
-	# if wep.keyid & 32:
-	# 	return ord(chr(wep.iv[0])) + (ord(chr(wep.iv[1])) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
-	# else:
-	# 解析 WPA KEY ID (b'\x00\x00\x00', fixed field)
 	return int.from_bytes(wep.iv, "little")
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
-		return ord(str(p[Dot11QoS])[0]) & 0x0F
+		return ord((p[Dot11QoS])[0]) & 0x0F
 	return 0
 
 def dot11_is_group(p):
