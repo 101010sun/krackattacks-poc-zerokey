@@ -150,7 +150,7 @@ def dot11_get_iv(p):
 	else:
 		# 解析 WPA KEY ID (b'\x00\x00\x00\x00')
 		print('Debug: ', end='') # !--
-		print(wep.iv)
+		print(wep.iv.length)
 		return (wep.iv[0]) + ((wep.iv[1])<< 8) + ((wep.iv[2]) << 16)
 
 def dot11_get_tid(p):
