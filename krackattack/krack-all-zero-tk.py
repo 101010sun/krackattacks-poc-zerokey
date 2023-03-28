@@ -154,7 +154,7 @@ def dot11_get_iv(p):
 	if wep.keyid & 32:
 		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 	else:
-		return ord(str(wep.iv[0])) + (ord(str(wep.iv[1])) << 8) + (ord(str(wep.iv[2])) << 16)
+		return int.from_bytes(wep.iv, 'little')
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
