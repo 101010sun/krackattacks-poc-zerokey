@@ -148,7 +148,7 @@ def dot11_get_iv(p):
 		return ord(chr(wep.iv[0])) + (ord(chr(wep.iv[1])) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 	else:
 		# 解析 WPA KEY ID (b'\x00\x00\x00\x00')
-		return int.from_bytes(wep.iv, 'little')
+		return (wep.iv[0]) + ((wep.iv[1])<< 8) + ((wep.iv[2]) << 16)
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
