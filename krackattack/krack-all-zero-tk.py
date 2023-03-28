@@ -110,8 +110,7 @@ class MitmSocket(L2Socket):
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
-		result = self._strip_fcs(p)
-		print_rx(INFO, "Debug: ", result) # !-- debug
+		result = p[Dot11]
 		return result
 
 	def close(self):
