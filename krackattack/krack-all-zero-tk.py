@@ -144,7 +144,11 @@ def dot11_get_iv(p):
 		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
 	wep = p[Dot11WEP]
-	return int.from_bytes(wep.iv, "little")
+	if wep.keyid & 32:
+		return ord(chr(wep.iv[0])) + (ord(chr(wep.iv[1])) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
+	else:
+		# 解析 WPA KEY ID (b'\x00\x00\x00\x00')
+		return int.from_bytes(wep.iv, 'little')
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
