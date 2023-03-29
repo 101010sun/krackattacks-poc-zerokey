@@ -147,6 +147,7 @@ def dot11_get_iv(p):
 		ccmp = p[Dot11CCMP]
 		print('Debug: ', end='')
 		print(ccmp)
+		return 0
 
 # !--
 def dot11_get_tid(p):
