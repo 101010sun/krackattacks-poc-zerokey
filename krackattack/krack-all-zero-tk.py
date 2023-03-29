@@ -103,7 +103,7 @@ class MitmSocket(L2Socket):
 			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
 			return None
 		else:
-			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
+			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(self._strip_fcs(p))))
 		result = self._strip_fcs(p)
 		return result
 
@@ -207,6 +207,7 @@ def dot11_to_str(p):
 		if p.subtype == 13:      return "Ack"
 	elif p.type == 2:
 		if p.haslayer(Dot11WEP): return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
+		if p.haslayer(Dot11CCMP): return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
 		if p.subtype == 4:       return "Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.subtype == 12:      return "QoS-Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.haslayer(EAPOL):
