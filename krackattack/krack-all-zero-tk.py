@@ -73,7 +73,7 @@ class MitmSocket(L2Socket):
 				pos += 8
 			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
-				return Dot11(str(p[Dot11])[:-4])
+				return Dot11(bytes(p[Dot11])[:-4])
 		return p[Dot11]
 
 	def recv(self, x=MTU):
@@ -104,10 +104,8 @@ class MitmSocket(L2Socket):
 			return None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
-
-		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
-		# return self._strip_fcs(p)
-		return p[Dot11]
+		result = self._strip_fcs(p)
+		return result
 
 	def close(self):
 		if self.pcap: self.pcap.close()
