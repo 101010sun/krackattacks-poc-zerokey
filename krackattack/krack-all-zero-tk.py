@@ -103,7 +103,7 @@ class MitmSocket(L2Socket):
 			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
 			return None
 		else:
-			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(self._strip_fcs(p))))
+			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 		result = self._strip_fcs(p)
 		return result
 
