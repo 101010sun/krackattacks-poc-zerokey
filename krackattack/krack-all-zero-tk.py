@@ -104,8 +104,8 @@ class MitmSocket(L2Socket):
 			return None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
-		result = self._strip_fcs(p)
-		return result
+		# result = self._strip_fcs(p)
+		return p[Dot11]
 
 	def close(self):
 		if self.pcap: self.pcap.close()
