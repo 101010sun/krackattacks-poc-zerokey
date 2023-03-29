@@ -214,6 +214,7 @@ def dot11_to_str(p):
 			if get_eapol_msgnum(p) != 0: return "EAPOL-Msg%d(seq=%d,replay=%d)" % (get_eapol_msgnum(p), dot11_get_seqnum(p), get_eapol_replaynum(p))
 			elif p.haslayer(EAP):return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
 			else:                return repr(p)
+		if p.haslayer(Dot11CCMP): return "EncryptedData(seq=%d)" % dot11_get_seqnum(p)
 	return repr(p)			
 
 def construct_csa(channel, count=1):
