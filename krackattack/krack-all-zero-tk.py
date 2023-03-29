@@ -154,6 +154,7 @@ def dot11_is_group(p):
 	return p.addr1 == "ff:ff:ff:ff:ff:ff"
 
 def get_eapol_msgnum(p):
+	# key information 對應位置
 	FLAG_PAIRWISE = 0b0000001000
 	FLAG_ACK      = 0b0010000000
 	FLAG_SECURE   = 0b1000000000
@@ -175,10 +176,10 @@ def get_eapol_msgnum(p):
 			# msg4 不會有任何 data
 			if keydatalen == 0: return 4
 			else: return 2
-
 	return 0
 
 def get_eapol_replaynum(p):
+	print(p[EAPOL_KEY].key_replay_counter)
 	return struct.unpack(">Q", p[EAPOL].load[9:17])[0]
 
 def set_eapol_replaynum(p, value):
