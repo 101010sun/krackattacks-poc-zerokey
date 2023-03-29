@@ -132,8 +132,7 @@ def xorstr(lhs, rhs):
 	return "".join([chr(ord(lb) ^ ord(rb)) for lb, rb in zip(lhs, rhs)])
 
 def dot11_get_seqnum(p):
-	print('Debug: ', end='')
-	print(p[Dot11].SC)
+	# .... .... .... (....)對齊用
 	return p[Dot11].SC >> 4
 
 def dot11_get_iv(p):
