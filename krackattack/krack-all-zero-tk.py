@@ -159,18 +159,21 @@ def get_eapol_msgnum(p):
 	FLAG_SECURE   = 0b1000000000
 
 	if not p.haslayer(EAPOL): return 0
-	keyinfo = bytes(p[EAPOL])[5:7]
-	print(keyinfo)
-	flags = struct.unpack(">H", keyinfo.decode())[0]
+	keyinfo = str(p[EAPOL])[5:7]
+	flags = struct.unpack(">H", keyinfo.encode())[0]
+	print(flags)
+	# 四次交握 pairwise 都是 1
 	if flags & FLAG_PAIRWISE:
-		# 4-way handshake
+		# ACK 為 1，sent by server
 		if flags & FLAG_ACK:
-			# sent by server
+			# 如果有加密，則為 msg3
 			if flags & FLAG_SECURE: return 3
 			else: return 1
+		# ACK 為 0，sent by client
 		else:
-			# sent by server
 			keydatalen = struct.unpack(">H", p[EAPOL].load[97:99])[0]
+			print(keydatalen)
+			# msg4 不會有任何 data
 			if keydatalen == 0: return 4
 			else: return 2
 
