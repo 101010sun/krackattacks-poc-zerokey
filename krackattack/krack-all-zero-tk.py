@@ -172,8 +172,8 @@ def get_eapol_msgnum(p):
 			else: return 1
 		# ACK 為 0，sent by client
 		else:
-			keydatalen = struct.unpack(">H", bytes(p[EAPOL].load[97:99]))[0]
-			print('Debug: ',end='')
+			keydatalen = struct.unpack(">H", bytes(p[EAPOL].load[92:94]))[0]
+			print('debug: ', end='')
 			print(keydatalen)
 			# msg4 不會有任何 data
 			if keydatalen == 0: return 4
