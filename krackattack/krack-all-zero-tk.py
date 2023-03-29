@@ -132,6 +132,8 @@ def xorstr(lhs, rhs):
 	return "".join([chr(ord(lb) ^ ord(rb)) for lb, rb in zip(lhs, rhs)])
 
 def dot11_get_seqnum(p):
+	print('Debug: ', end='')
+	print(p[Dot11].SC)
 	return p[Dot11].SC >> 4
 
 def dot11_get_iv(p):
@@ -144,7 +146,7 @@ def dot11_get_iv(p):
 		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 	else:
 		return int.from_bytes(wep.iv, 'little')
-
+# !--
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
 		return ord(str(p[Dot11QoS])[0]) & 0x0F
