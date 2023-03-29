@@ -179,9 +179,7 @@ def get_eapol_msgnum(p):
 	return 0
 
 def get_eapol_replaynum(p):
-	print('Debug: ', end='')
-	print(p[EAPOL].load)
-	return struct.unpack(">Q", p[EAPOL].load[9:17])[0]
+	return struct.unpack(">Q", p[EAPOL].load[5:13])[0]
 
 def set_eapol_replaynum(p, value):
 	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
