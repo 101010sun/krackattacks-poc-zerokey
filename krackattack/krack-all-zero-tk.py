@@ -170,14 +170,14 @@ def get_eapol_msgnum(p):
 			else: return 1
 		else:
 			# sent by server
-			keydatalen = struct.unpack(">H", p[EAPOL].load[97:99].encode())[0]
+			keydatalen = struct.unpack(">H", p[EAPOL].load[97:99])[0]
 			if keydatalen == 0: return 4
 			else: return 2
 
 	return 0
 
 def get_eapol_replaynum(p):
-	return struct.unpack(">Q", p[EAPOL].load[9:17].encode())[0]
+	return struct.unpack(">Q", p[EAPOL].load[9:17])[0]
 
 def set_eapol_replaynum(p, value):
 	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
