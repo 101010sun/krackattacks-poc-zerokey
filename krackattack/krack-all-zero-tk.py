@@ -159,9 +159,9 @@ def get_eapol_msgnum(p):
 	FLAG_SECURE   = 0b1000000000
 
 	if not p.haslayer(EAPOL): return 0
-	keyinfo = str(p[EAPOL])[5:7]
+	keyinfo = bytes(p[EAPOL])[5:7]
 	print(keyinfo)
-	flags = struct.unpack(">H", keyinfo)[0]
+	flags = struct.unpack(">H", keyinfo.decode())[0]
 	if flags & FLAG_PAIRWISE:
 		# 4-way handshake
 		if flags & FLAG_ACK:
