@@ -106,8 +106,8 @@ class MitmSocket(L2Socket):
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 
 		# FIXME: Strip the FCS if present, and drop the RadioTap header, will make package wrong?
-		return self._strip_fcs(p)
-		# return p[Dot11]
+		# return self._strip_fcs(p)
+		return p[Dot11]
 
 	def close(self):
 		if self.pcap: self.pcap.close()
@@ -125,16 +125,6 @@ def set_mac_address(iface, macaddr):
 	subprocess.check_output(["ifconfig", iface, "down"])
 	call_macchanger(iface, macaddr)
 	subprocess.check_output(["ifconfig", iface, "up"])
-
-def set_monitor_ack_address(iface, macaddr, sta_suffix=None):
-	"""Add a virtual STA interface for ACK generation. This assumes nothing takes control of this
-	   interface, meaning it remains on the current channel."""
-	sta_iface = iface + ("sta" if sta_suffix is None else sta_suffix)
-	subprocess.call(["iw", sta_iface, "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-	subprocess.check_output(["iw", iface, "interface", "add", sta_iface, "type", "managed"])
-	call_macchanger(sta_iface, macaddr)
-	subprocess.check_output(["ifconfig", sta_iface, "up"])
-
 
 #### Packet Processing Functions ####
 
@@ -162,7 +152,6 @@ def dot11_get_tid(p):
 	return 0
 
 def dot11_is_group(p):
-	# TODO: Detect if multicast bit is set in p.addr1
 	return p.addr1 == "ff:ff:ff:ff:ff:ff"
 
 def get_eapol_msgnum(p):
@@ -182,16 +171,14 @@ def get_eapol_msgnum(p):
 			else: return 1
 		else:
 			# sent by server
-			# FIXME: use p[EAPOL.load] instead of str(p[EAPOL])
-			keydatalen = struct.unpack(">H", str(p[EAPOL])[97:99].encode())[0]
+			keydatalen = struct.unpack(">H", p[EAPOL].load[97:99].encode())[0]
 			if keydatalen == 0: return 4
 			else: return 2
 
 	return 0
 
 def get_eapol_replaynum(p):
-	# FIXME: use p[EAPOL.load] instead of str(p[EAPOL])
-	return struct.unpack(">Q", str(p[EAPOL])[9:17].encode())[0]
+	return struct.unpack(">Q", p[EAPOL].load[9:17].encode())[0]
 
 def set_eapol_replaynum(p, value):
 	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
