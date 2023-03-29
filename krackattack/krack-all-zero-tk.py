@@ -134,20 +134,15 @@ def dot11_get_seqnum(p):
 	return p[Dot11].SC >> 4
 
 def dot11_get_iv(p):
-	if not p.haslayer(Dot11WEP) and not p.haslayer(Dot11CCMP):
+	if not p.haslayer(Dot11WEP):
 		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
 		return 0
-	if p.haslayer(Dot11WEP):
-		wep = p[Dot11WEP]
-		if wep.keyid & 32:
-			return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
-		else:
-			return int.from_bytes(wep.iv, 'little')
+	wep = p[Dot11WEP]
+	if wep.keyid & 32:
+		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 	else:
-		ccmp = p[Dot11CCMP]
-		print('Debug: ', end='')
-		print(ccmp)
-		return 0
+		return int.from_bytes(wep.iv, 'little')
+
 
 # !--
 def dot11_get_tid(p):
@@ -213,7 +208,6 @@ def dot11_to_str(p):
 		if p.subtype == 13:      return "Ack"
 	elif p.type == 2:
 		if p.haslayer(Dot11WEP): return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
-		if p.haslayer(Dot11CCMP):return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
 		if p.subtype == 4:       return "Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.subtype == 12:      return "QoS-Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
 		if p.haslayer(EAPOL):
