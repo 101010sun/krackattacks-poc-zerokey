@@ -66,8 +66,6 @@ class MitmSocket(L2Socket):
 		if p[RadioTap].present & 2 != 0:
 			rawframe = bytes(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
-			print('Debug: ', end='') # !--
-			print(rawframe)
 			while rawframe[pos - 1] & 0x80 != 0: pos += 4
 			# If the TSFT field is present, it must be 8-bytes aligned
 			if p[RadioTap].present & 1 != 0:
