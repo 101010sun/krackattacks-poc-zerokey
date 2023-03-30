@@ -64,7 +64,7 @@ class MitmSocket(L2Socket):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
 		if p[RadioTap].present & 2 != 0:
-			rawframe = str(p[RadioTap])
+			rawframe = bytes(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
 			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
 			# If the TSFT field is present, it must be 8-bytes aligned
