@@ -304,7 +304,7 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 01 (WPA)
 				self.parse_wparsn(el.info[4:])
-				self.wpavers = 1
+				self.wpavers = 2
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 02 (WPA)
 				self.wmmenabled = 1
