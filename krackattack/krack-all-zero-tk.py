@@ -300,11 +300,11 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_RSN:
 				# 有 RSN Info 為 WPA2
 				self.parse_wparsn(el.info)
-				self.wpavers = 2
+				self.wpavers |= 2
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 01 (WPA)
 				self.parse_wparsn(el.info[4:])
-				self.wpavers = 2
+				self.wpavers |= 1
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 02 (WPA)
 				self.wmmenabled = 1
@@ -333,7 +333,6 @@ rsn_ptksa_counters={ptksa_counters}
 rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
-wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -343,12 +342,11 @@ wpa_passphrase={password}"""
 			iface = iface,
 			ssid = self.ssid,
 			channel = self.rogue_channel,
-			wpaver = self.wpavers,
+			wpaver = self.wpavers, # wpa=1 (WPA) wpa=2 (WPA2) wpa=3 (WPA, WPA2)
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
 			ptksa_counters = (self.capab & 0b001100) >> 2,
 			gtksa_counters = (self.capab & 0b110000) >> 4,
-			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
 
