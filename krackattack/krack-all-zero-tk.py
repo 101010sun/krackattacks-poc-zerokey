@@ -782,6 +782,10 @@ class KRAckAttack():
 			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "managed"])
 			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 			time.sleep(0.2)
+		else: 
+			subprocess.check_output(["ifconfig", self.nic_rogue_ap, "down"])
+			subprocess.check_output(["iwconfig", self.nic_rogue_ap, "mode", "managed"])
+			subprocess.check_output(["ifconfig", self.nic_rogue_ap, "up"])
 
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
