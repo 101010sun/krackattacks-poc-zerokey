@@ -917,12 +917,12 @@ if __name__ == "__main__":
 	# 必要的參數
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
 	parser.add_argument("nic_real_clientack", help="Wireless monitor interface that will station on the channel of the target AP.")
-	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
+	parser.add_argument("nic_rogue_mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
+	parser.add_argument("nic_rogue_ap", help="Wireless interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 	parser.add_argument("password", help="The password of the network to attack.")
 
 	# 選擇性參數
-	parser.add_argument("-m", "--nic-rogue-mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
 	parser.add_argument("-t", "--target", help="Specifically target the client with the given MAC address.")
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
 	parser.add_argument("-d", "--debug", action="count", help="increase output verbosity", default=0)
