@@ -400,7 +400,6 @@ class ClientState():
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				# 四次交握不轉送 msg2 & msg4
 				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
