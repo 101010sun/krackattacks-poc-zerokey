@@ -80,15 +80,15 @@ class MitmSocket(L2Socket):
 	def recv(self, x=MTU):
 		p = L2Socket.recv(self, x)
 		if p == None: 
-			return None
+			return None, None
 		if p.getlayer(Dot11) == None:
-			return None
+			return None, None
 		
 		if self.pcap: self.pcap.write(p)
 		# Don't care about control frames
 		if p.type == 1:
 			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
-			return None
+			return None, None
 
 		# 1. Radiotap monitor mode header is defined in ieee80211_add_tx_radiotap_header: TX_FLAGS, DATA_RETRIES, [RATE, MCS, VHT, ]
 		# 2. Radiotap header for normal received frames is defined in ieee80211_add_rx_radiotap_header: FLAGS, CHANNEL, RX_FLAGS, [...]
@@ -102,7 +102,7 @@ class MitmSocket(L2Socket):
 		#	allows us to detect cross-channel frames (received due to proximity of transmissors on different channel)
 		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or radiotap_possible_injection):
 			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
-			return None
+			return None, None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 		result = self._strip_fcs(p)
