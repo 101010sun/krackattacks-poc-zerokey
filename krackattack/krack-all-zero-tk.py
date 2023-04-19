@@ -294,7 +294,7 @@ class NetworkConfig():
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
 			if el.ID == IEEE_TLV_TYPE_SSID:
-				self.ssid = el.info
+				self.ssid = el.info.decode()
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
 				self.real_channel = el.info[0]
 			elif el.ID == IEEE_TLV_TYPE_RSN:
@@ -428,7 +428,6 @@ class KRAckAttack():
 		self.nic_rogue_ap = nic_rogue_ap
 		self.nic_rogue_mon = nic_rogue_mon
 		self.dumpfile = dumpfile
-		print(type(ssid))
 		self.ssid = ssid
 		self.beacon = None
 		self.apmac = None
