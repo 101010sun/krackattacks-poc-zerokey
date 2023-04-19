@@ -341,7 +341,7 @@ wpa_passphrase={password}"""
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
 			iface = iface,
-			ssid = self.ssid.decode(),
+			ssid = self.ssid,
 			channel = self.rogue_channel,
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
