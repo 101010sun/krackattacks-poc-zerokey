@@ -179,7 +179,7 @@ def get_eapol_msgnum(p):
 	return 0
 
 def get_eapol_replaynum(p):
-	return struct.unpack(">Q", str(p[EAPOL])[5:13])[0]
+	return struct.unpack(">Q", bytes(p[EAPOL])[5:13])[0]
 
 def set_eapol_replaynum(p, value):
 	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
