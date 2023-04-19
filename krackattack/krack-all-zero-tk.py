@@ -428,6 +428,7 @@ class KRAckAttack():
 		self.nic_rogue_ap = nic_rogue_ap
 		self.nic_rogue_mon = nic_rogue_mon
 		self.dumpfile = dumpfile
+		print(type(ssid))
 		self.ssid = ssid
 		self.beacon = None
 		self.apmac = None
