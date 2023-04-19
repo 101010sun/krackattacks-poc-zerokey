@@ -277,7 +277,7 @@ class NetworkConfig():
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
 		for i in range(num_pairwise):
-			self.pairwise_ciphers.add(ord(pos[3]))
+			self.pairwise_ciphers.add(pos[3])
 			pos = pos[4:]
 		# 取出 akm 數量, (authentication and key management, akm)
 		num_akm = struct.unpack("<H", pos[:2])[0]
