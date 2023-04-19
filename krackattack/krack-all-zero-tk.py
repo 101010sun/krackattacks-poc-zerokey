@@ -161,7 +161,7 @@ def get_eapol_msgnum(p):
 	FLAG_SECURE   = 0b1000000000
 
 	if not p.haslayer(EAPOL): return 0
-	keyinfo = str(p[EAPOL])[5:7]
+	keyinfo = bytes(p[EAPOL])[5:7]
 	flags = struct.unpack(">H", keyinfo)[0]
 	# pairwise 都是 1
 	if flags & FLAG_PAIRWISE:
@@ -172,7 +172,7 @@ def get_eapol_msgnum(p):
 			else: return 1
 		# ACK 為 0，sent by client
 		else:
-			keydatalen = struct.unpack(">H", str(p[EAPOL])[93:95])[0]
+			keydatalen = struct.unpack(">H", bytes(p[EAPOL].load[93:95]))[0]
 			# msg4 不會有任何 data
 			if keydatalen == 0: return 4
 			else: return 2
@@ -341,7 +341,7 @@ wpa_passphrase={password}"""
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
 		return TEMPLATE.format(
 			iface = iface,
-			ssid = self.ssid,
+			ssid = self.ssid.decode(),
 			channel = self.rogue_channel,
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
