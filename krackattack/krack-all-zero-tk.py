@@ -329,11 +329,8 @@ wpa={wpaver}
 wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
-rsn_ptksa_counters={ptksa_counters}
-rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
-wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -346,11 +343,12 @@ wpa_passphrase={password}"""
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
-			ptksa_counters = (self.capab & 0b001100) >> 2,
-			gtksa_counters = (self.capab & 0b110000) >> 4,
-			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
+	
+			# ptksa_counters = (self.capab & 0b001100) >> 2,
+			# gtksa_counters = (self.capab & 0b110000) >> 4,
+			# wmmadvertised = int(args.group),
 
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
