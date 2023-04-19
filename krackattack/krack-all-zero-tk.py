@@ -64,9 +64,9 @@ class MitmSocket(L2Socket):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
 		if p[RadioTap].present & 2 != 0:
-			rawframe = bytes(p[RadioTap])
+			rawframe = str(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
-			while rawframe[pos - 1] & 0x80 != 0: pos += 4
+			while ord(rawframe[pos - 1]) & 0x80 != 0: pos += 4
 			# If the TSFT field is present, it must be 8-bytes aligned
 			if p[RadioTap].present & 1 != 0:
 				pos += (8 - (pos % 8))
@@ -74,7 +74,7 @@ class MitmSocket(L2Socket):
 			# radiotap flag & 0x10
 			if rawframe[pos] & 0x10 != 0:
 				# FCS 在 frame 的最後 4 bytes
-				return Dot11(bytes(p[Dot11])[:-4])
+				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
 
 	def recv(self, x=MTU):
@@ -148,7 +148,7 @@ def dot11_get_iv(p):
 # !--
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
-		return ord(bytes(p[Dot11QoS])[0]) & 0x0F
+		return ord(str(p[Dot11QoS])[0]) & 0x0F
 	return 0
 
 def dot11_is_group(p):
@@ -161,7 +161,7 @@ def get_eapol_msgnum(p):
 	FLAG_SECURE   = 0b1000000000
 
 	if not p.haslayer(EAPOL): return 0
-	keyinfo = bytes(p[EAPOL])[5:7]
+	keyinfo = str(p[EAPOL])[5:7]
 	flags = struct.unpack(">H", keyinfo)[0]
 	# pairwise 都是 1
 	if flags & FLAG_PAIRWISE:
@@ -172,14 +172,14 @@ def get_eapol_msgnum(p):
 			else: return 1
 		# ACK 為 0，sent by client
 		else:
-			keydatalen = struct.unpack(">H", bytes(p[EAPOL].load[93:95]))[0]
+			keydatalen = struct.unpack(">H", str(p[EAPOL])[93:95])[0]
 			# msg4 不會有任何 data
 			if keydatalen == 0: return 4
 			else: return 2
 	return 0
 
 def get_eapol_replaynum(p):
-	return struct.unpack(">Q", p[EAPOL].load[5:13])[0]
+	return struct.unpack(">Q", str(p[EAPOL])[5:13])[0]
 
 def set_eapol_replaynum(p, value):
 	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
@@ -272,19 +272,19 @@ class NetworkConfig():
 	# 解析 RSN 內容
 	def parse_wparsn(self, wparsn):
 		# 群組加密演算法
-		self.group_cipher = ord(wparsn.decode('unicode_escape')[5])
+		self.group_cipher = ord(wparsn[5])
 		# 處理 c 語言的struct, H: unsigned short return python integer; <: little-endian
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
 		for i in range(num_pairwise):
-			self.pairwise_ciphers.add(ord(pos.decode('unicode_escape')[3]))
+			self.pairwise_ciphers.add(ord(pos[3]))
 			pos = pos[4:]
 		# 取出 akm 數量, (authentication and key management, akm)
 		num_akm = struct.unpack("<H", pos[:2])[0]
 		# 取出 akm suite list
 		pos = pos[2:]
 		for i in range(num_akm):
-			self.akms.add(ord(pos.decode('unicode_escape')[3]))
+			self.akms.add(ord(pos[3]))
 			pos = pos[4:]
 		# RSN capabilities
 		if len(pos) >= 2:
@@ -294,18 +294,18 @@ class NetworkConfig():
 		el = p[Dot11Elt]
 		while isinstance(el, Dot11Elt):
 			if el.ID == IEEE_TLV_TYPE_SSID:
-				self.ssid = el.info.decode('unicode_escape')
+				self.ssid = el.info
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-				self.real_channel = ord(el.info.decode('unicode_escape')[0])
+				self.real_channel = ord(el.info[0])
 			elif el.ID == IEEE_TLV_TYPE_RSN:
 				# 有 RSN Info 為 WPA2
 				self.parse_wparsn(el.info)
 				self.wpavers |= 2
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x01":
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x01":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 01 (WPA)
 				self.parse_wparsn(el.info[4:])
 				self.wpavers |= 1
-			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info.decode('unicode_escape')[:4] == "\x00\x50\xf2\x02":
+			elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x02":
 				# Micrsoft OUI: 00 50 f2; OUI Type: 02 (WPA)
 				self.wmmenabled = 1
 
