@@ -72,7 +72,7 @@ class MitmSocket(L2Socket):
 				pos += (8 - (pos % 8))
 				pos += 8
 			# radiotap flag & 0x10
-			if rawframe[pos] & 0x10 != 0:
+			if ord(rawframe[pos]) & 0x10 != 0:
 				# FCS 在 frame 的最後 4 bytes
 				return Dot11(str(p[Dot11])[:-4])
 		return p[Dot11]
