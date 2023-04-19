@@ -296,7 +296,7 @@ class NetworkConfig():
 			if el.ID == IEEE_TLV_TYPE_SSID:
 				self.ssid = el.info
 			elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-				self.real_channel = ord(el.info[0].decode())
+				self.real_channel = el.info[0]
 			elif el.ID == IEEE_TLV_TYPE_RSN:
 				# 有 RSN Info 為 WPA2
 				self.parse_wparsn(el.info)
