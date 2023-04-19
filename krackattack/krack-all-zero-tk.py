@@ -284,7 +284,7 @@ class NetworkConfig():
 		# 取出 akm suite list
 		pos = pos[2:]
 		for i in range(num_akm):
-			self.akms.add(ord(pos[3]))
+			self.akms.add(pos[3])
 			pos = pos[4:]
 		# RSN capabilities
 		if len(pos) >= 2:
