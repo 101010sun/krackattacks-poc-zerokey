@@ -397,8 +397,6 @@ class ClientState():
 			# Forwarding rules when attacking the group handshake
 			return True
 		else:
-			if p.haslayer(Dot11ProbeReq) | p.haslayer(Dot11ProbeResp):
-				return True
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
