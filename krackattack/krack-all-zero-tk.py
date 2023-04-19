@@ -272,7 +272,7 @@ class NetworkConfig():
 	# 解析 RSN 內容
 	def parse_wparsn(self, wparsn):
 		# 群組加密演算法
-		self.group_cipher = ord(wparsn[5])
+		self.group_cipher = wparsn[5]
 		# 處理 c 語言的struct, H: unsigned short return python integer; <: little-endian
 		num_pairwise = struct.unpack("<H", wparsn[6:8])[0]
 		pos = wparsn[8:]
