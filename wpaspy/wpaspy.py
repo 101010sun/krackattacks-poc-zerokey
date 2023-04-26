@@ -23,14 +23,11 @@ class Ctrl:
 
         try:
             mode = os.stat(path).st_mode
-            print(mode)
-            print(stat.S_ISSOCK(mode))
             if stat.S_ISSOCK(mode):
                 self.udp = False
             else:
                 self.udp = True
         except:
-            print('except')
             self.udp = True
 
         if not self.udp:
@@ -48,21 +45,18 @@ class Ctrl:
         else:
             try:
                 self.s = None
-                print(path)
-                print(port)
-                print(os.path.exists(path))
                 ai_list = socket.getaddrinfo(path, port, socket.AF_INET, socket.SOCK_DGRAM)
                 for af, socktype, proto, cn, sockaddr in ai_list:
                     self.sockaddr = sockaddr
                     break
                 self.s = socket.socket(af, socktype)
                 self.s.settimeout(5)
-                self.s.sendto("GET_COOKIE", sockaddr)
+                self.s.sendto(b"GET_COOKIE", sockaddr)
                 reply, server = self.s.recvfrom(4096)
                 self.cookie = reply
                 self.port = port
             except:
-                print("connect exception", path, str(port))
+                print("connect exception ", path, str(port))
                 if self.s != None:
                     self.s.close()
                 raise
@@ -86,20 +80,31 @@ class Ctrl:
             self.started = False
 
     def request(self, cmd, timeout=10):
+        if type(cmd) == str:
+            try:
+                cmd2 = cmd.encode()
+                cmd = cmd2
+            except UnicodeDecodeError as e:
+                pass
         if self.udp:
-            self.s.sendto(self.cookie + cmd.encode(), self.sockaddr)
+            self.s.sendto(self.cookie + cmd, self.sockaddr)
         else:
-            self.s.send(cmd.encode())
+            self.s.send(cmd)
         [r, w, e] = select.select([self.s], [], [], timeout)
         if r:
-            return self.s.recv(4096)
+            res = self.s.recv(4096).decode()
+            try:
+                r = str(res)
+            except UnicodeDecodeError as e:
+                r = res
+            return r
         raise Exception("Timeout on waiting response")
 
     def attach(self):
         if self.attached:
             return None
         res = self.request("ATTACH")
-        if "OK".encode() in res:
+        if "OK" in res:
             self.attached = True
             return None
         raise Exception("ATTACH failed")
@@ -110,7 +115,7 @@ class Ctrl:
         while self.pending():
             ev = self.recv()
         res = self.request("DETACH")
-        if "FAIL".encode() not in res:
+        if "FAIL" not in res:
             self.attached = False
             return None
         raise Exception("DETACH failed")
@@ -132,5 +137,9 @@ class Ctrl:
         return False
 
     def recv(self):
-        res = self.s.recv(4096)
-        return res
+        res = self.s.recv(4096).decode()
+        try:
+            r = str(res)
+        except UnicodeDecodeError as e:
+            r = res
+        return r

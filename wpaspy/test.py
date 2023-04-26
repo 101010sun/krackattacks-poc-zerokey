@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Test script for wpaspy
 # Copyright (c) 2013, Jouni Malinen <j@w1.fi>

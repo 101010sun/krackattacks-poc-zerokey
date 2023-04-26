@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Python bindings for wpa_ctrl (wpa_supplicant/hostapd control interface)
 # Copyright (c) 2013, Jouni Malinen <j@w1.fi>

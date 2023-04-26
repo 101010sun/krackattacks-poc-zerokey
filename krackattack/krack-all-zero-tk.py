@@ -63,18 +63,22 @@ class MitmSocket(L2Socket):
 	def _strip_fcs(self, p):
 		# radiotap header flags 0x00...0: no used FCS failed
 		# .present is flagsfield
-		if p[RadioTap].present & 2 != 0:
-			rawframe = bytes(p[RadioTap])
+		if p[RadioTap].present & 2 != 0 and not p.haslayer(Dot11FCS):
+			rawframe = raw(p[RadioTap])
 			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
-			while rawframe[pos - 1] & 0x80 != 0: pos += 4
+			while orb(rawframe[pos - 1]) & 0x80 != 0: pos += 4
 			# If the TSFT field is present, it must be 8-bytes aligned
 			if p[RadioTap].present & 1 != 0:
 				pos += (8 - (pos % 8))
 				pos += 8
 			# radiotap flag & 0x10
 			if rawframe[pos] & 0x10 != 0:
-				# FCS 在 frame 的最後 4 bytes
-				return Dot11(bytes(p[Dot11])[:-4])
+				try:
+					# FCS 在 frame 的最後 4 bytes
+					return Dot11(raw(p[Dot11FCS])[:-4])
+				except:
+					return None
+				
 		return p[Dot11]
 
 	def recv(self, x=MTU):
@@ -144,8 +148,6 @@ def dot11_get_iv(p):
 	else:
 		return int.from_bytes(wep.iv, 'little')
 
-
-# !--
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
 		return ord(bytes(p[Dot11QoS])[0]) & 0x0F
