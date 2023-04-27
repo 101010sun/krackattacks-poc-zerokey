@@ -683,6 +683,8 @@ class KRAckAttack():
 			self.hostapd_log.close()
 		if self.sock_real: self.sock_real.close()
 		if self.sock_rogue: self.sock_rogue.close()
+		subprocess.call(["macchanger", "-p", self.nic_real_clientack])
+		subprocess.call(["macchanger", "-p", self.nic_rogue_ap])
 
 def cleanup():
 	attack.stop()
