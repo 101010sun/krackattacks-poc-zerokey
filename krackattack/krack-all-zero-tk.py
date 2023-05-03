@@ -608,8 +608,8 @@ class KRAckAttack():
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 
-		# (os.path.join(self.script_path, "../hostapd/hostapd"))
-		hostapd_path = os.path.realpath('hostapd' + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
+		hostapd_path =('hostapd ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
+		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
 		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
