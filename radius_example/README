@@ -4,7 +4,6 @@ Copyright (c) 2007, Jouni Malinen <j@w1.fi>
 This software may be distributed under the terms of the BSD license.
 See the parent directory README for more details.
 
-
 This directory contains an example showing how the RADIUS client
 functionality from hostapd can be used as a library in another
 program. The example program initializes the RADIUS client and send a
@@ -26,7 +25,7 @@ notifications. This is implemented using the generic event loop
 implementation (see src/utils/eloop.h).
 
 The main application may either use the included event loop
-implementation or alternatively, implement eloop_* wrapper functions
+implementation or alternatively, implement eloop\_\* wrapper functions
 to use whatever event loop design is used in the main program. This
 would involve removing src/utils/eloop.o from the library and
 implementing following functions defines in src/utils/eloop.h:
