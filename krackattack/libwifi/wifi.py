@@ -29,6 +29,12 @@ def log(level, msg, color=None, showtime=True):
 	if level == ERROR   and color is None: color="red"
 	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
 
+# 印出 func.
+def print_rx(level, name, p, color=None, suffix=None):
+	if p[Dot11].type == 1: return
+	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
+	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
+
 #### Utility ####
 def call_macchanger(iface, macaddr):
 	try:
@@ -186,6 +192,18 @@ def append_csa(p, channel, count=1):
 		el = el.payload
 	prevel.payload = construct_csa(channel, count)
 	return p
+
+
+# 取得 beacon frame 的 ssid func.
+def get_tlv_value(p, typee):
+	if not p.haslayer(Dot11Elt): return None
+	el = p[Dot11Elt]
+	while isinstance(el, Dot11Elt):
+		if el.ID == typee:
+			return el.info.decode()
+		el = el.payload
+	return None
+
 
 #### Man-in-the-middle Code ####
 class MitmSocket(L2Socket):
