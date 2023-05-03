@@ -21,14 +21,14 @@ class Ctrl:
         self.path = path
         self.port = port
 
-        try:
-            mode = os.stat(path).st_mode
-            if stat.S_ISSOCK(mode):
-                self.udp = False
-            else:
+        self.udp = False
+        if not path.startswith('/'):
+            try:
+                mode = os.stat(path).st_mode
+                if not stat.S_ISSOCK(mode):
+                    self.udp = True
+            except:
                 self.udp = True
-        except:
-            self.udp = True
 
         if not self.udp:
             self.s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -38,14 +38,15 @@ class Ctrl:
             self.s.bind(self.local)
             try:
                 self.s.connect(self.dest)
-            except Exception as e :
+            except Exception as e:
                 self.s.close()
                 os.unlink(self.local)
                 raise
         else:
             try:
                 self.s = None
-                ai_list = socket.getaddrinfo(path, port, socket.AF_INET, socket.SOCK_DGRAM)
+                ai_list = socket.getaddrinfo(path, port, socket.AF_INET,
+                                             socket.SOCK_DGRAM)
                 for af, socktype, proto, cn, sockaddr in ai_list:
                     self.sockaddr = sockaddr
                     break
@@ -111,6 +112,9 @@ class Ctrl:
 
     def detach(self):
         if not self.attached:
+            return None
+        if self.s.fileno() == -1:
+            self.attached = False
             return None
         while self.pending():
             ev = self.recv()
