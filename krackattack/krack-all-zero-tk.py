@@ -88,6 +88,12 @@ class NetworkConfig():
 		self.rogue_channel = 1 if self.real_channel >= 6 else 11
 	
 	# hostapd.confg寫檔 
+	# wmm_advertised={wmmadvertised}
+	# rsn_ptksa_counters={ptksa_counters}
+	# rsn_gtksa_counters={gtksa_counters}
+	# ptksa_counters = (self.capab & 0b001100) >> 2,
+	# gtksa_counters = (self.capab & 0b110000) >> 4,
+	# wmmadvertised = int(args.group),
 	def write_config(self, iface):
 		TEMPLATE = """
 ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
@@ -101,11 +107,8 @@ wpa={wpaver}
 wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
-rsn_ptksa_counters={ptksa_counters}
-rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
-wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -118,9 +121,6 @@ wpa_passphrase={password}"""
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
-			ptksa_counters = (self.capab & 0b001100) >> 2,
-			gtksa_counters = (self.capab & 0b110000) >> 4,
-			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
 
