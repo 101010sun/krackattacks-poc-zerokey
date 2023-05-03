@@ -194,17 +194,6 @@ def append_csa(p, channel, count=1):
 	return p
 
 
-# 取得 beacon frame 的 ssid func.
-def get_tlv_value(p, typee):
-	if not p.haslayer(Dot11Elt): return None
-	el = p[Dot11Elt]
-	while isinstance(el, Dot11Elt):
-		if el.ID == typee:
-			return el.info.decode()
-		el = el.payload
-	return None
-
-
 #### Man-in-the-middle Code ####
 class MitmSocket(L2Socket):
 	def __init__(self, dumpfile=None, strict_echo_test=False, **kwargs):
