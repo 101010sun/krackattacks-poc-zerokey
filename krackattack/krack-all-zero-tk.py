@@ -604,7 +604,7 @@ class KRAckAttack():
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
-			subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel), "fixed"])
+			subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
