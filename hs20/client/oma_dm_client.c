@@ -111,6 +111,12 @@ static xml_node_t * oma_dm_build_hdr(struct hs20_osu_client *ctx,
 	xml_node_t *syncml, *synchdr;
 	xml_namespace_t *ns;
 
+	if (!ctx->devid) {
+		wpa_printf(MSG_ERROR,
+			   "DevId from devinfo.xml is not available - cannot use OMA DM");
+		return NULL;
+	}
+
 	syncml = xml_node_create_root(ctx->xml, "SYNCML:SYNCML1.2", NULL, &ns,
 				      "SyncML");
 
@@ -401,7 +407,7 @@ static int oma_dm_exec_browser(struct hs20_osu_client *ctx, xml_node_t *exec)
 	wpa_printf(MSG_INFO, "Data: %s", data);
 	wpa_printf(MSG_INFO, "Launch browser to URI '%s'", data);
 	write_summary(ctx, "Launch browser to URI '%s'", data);
-	res = hs20_web_browser(data);
+	res = hs20_web_browser(data, 1);
 	xml_node_get_text_free(ctx->xml, data);
 	if (res > 0) {
 		wpa_printf(MSG_INFO, "User response in browser completed successfully");
