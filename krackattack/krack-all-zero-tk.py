@@ -586,7 +586,7 @@ class KRAckAttack():
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
 		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
-		self.sock_real.set_channel(self.netconfig.real_channel)
+		# self.sock_real.set_channel(self.netconfig.real_channel)
 
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
