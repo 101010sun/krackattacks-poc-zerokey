@@ -14,6 +14,16 @@ import sys, os, socket, struct, time, argparse, heapq, subprocess, atexit, selec
 from datetime import datetime
 from wpaspy import Ctrl
 
+# 取得 beacon frame 的 ssid func.
+def get_tlv_value(p, typee):
+	if not p.haslayer(Dot11Elt): return None
+	el = p[Dot11Elt]
+	while isinstance(el, Dot11Elt):
+		if el.ID == typee:
+			return el.info.decode()
+		el = el.payload
+	return None
+
 # 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
