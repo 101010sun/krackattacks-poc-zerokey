@@ -17,6 +17,11 @@ from wpaspy import Ctrl
 
 global_log_level = INFO
 
+def print_rx(level, name, p, color=None, suffix=None):
+	if p[Dot11].type == 1: return
+	if color is None and (Dot11Deauth in p or Dot11Disas in p): color="orange"
+	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
+
 # 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
