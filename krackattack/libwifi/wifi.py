@@ -14,27 +14,6 @@ IEEE80211_RADIOTAP_CHANNEL = (1 << 3)
 IEEE80211_RADIOTAP_TX_FLAGS = (1 << 15)
 IEEE80211_RADIOTAP_DATA_RETRIES = (1 << 17)
 
-#### Basic output and logging functionality ####
-ALL, DEBUG, INFO, STATUS, WARNING, ERROR = range(6)
-COLORCODES = { "gray"  : "\033[0;37m",
-               "green" : "\033[0;32m",
-               "orange": "\033[0;33m",
-               "red"   : "\033[0;31m" }
-
-global_log_level = INFO
-def log(level, msg, color=None, showtime=True):
-	if level < global_log_level: return
-	if level == DEBUG   and color is None: color="gray"
-	if level == WARNING and color is None: color="orange"
-	if level == ERROR   and color is None: color="red"
-	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
-
-# 印出 func.
-def print_rx(level, name, p, color=None, suffix=None):
-	if p[Dot11].type == 1: return
-	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
-	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
-
 #### Utility ####
 def call_macchanger(iface, macaddr):
 	try:
