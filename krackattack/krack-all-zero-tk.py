@@ -396,6 +396,7 @@ class KRAckAttack():
 				# Send one targeted beacon pair (should be retransmitted in case of failure), and one normal broadcast pair
 				self.send_csa_beacon(target=p.addr2)
 				self.send_csa_beacon()
+				subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].update_state(ClientState.Connecting)
 
