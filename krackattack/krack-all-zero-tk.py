@@ -15,26 +15,8 @@ from datetime import datetime
 from wpaspy import Ctrl
 
 
-#### Basic output and logging functionality ####
-ALL, DEBUG, INFO, STATUS, WARNING, ERROR = range(6)
-COLORCODES = { "gray"  : "\033[0;37m",
-               "green" : "\033[0;32m",
-               "orange": "\033[0;33m",
-               "red"   : "\033[0;31m" }
-
 global_log_level = INFO
-def log(level, msg, color=None, showtime=True):
-	if level < global_log_level: return
-	if level == DEBUG   and color is None: color="gray"
-	if level == WARNING and color is None: color="orange"
-	if level == ERROR   and color is None: color="red"
-	print((datetime.now().strftime('[%H:%M:%S] ') if showtime else " "*11) + COLORCODES.get(color, "") + msg + "\033[1;0m")
 
-# 印出 func.
-def print_rx(level, name, p, color=None, suffix=None):
-	if p[Dot11].type == 1: return
-	if color is None and (p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas)): color="orange"
-	log(level, "%s: %s -> %s: %s%s" % (name, p.addr2, p.addr1, dot11_to_str(p), suffix if suffix else ""), color=color)
 
 # 取得 beacon frame 的 ssid func.
 def get_tlv_value(p, typee):
@@ -735,7 +717,8 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	global_log_level = max(ALL, global_log_level - args.debug)
-
+	set_global_log_level2(max(ALL, global_log_level - args.debug))
+	
 	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
 	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
