@@ -34,6 +34,16 @@ def set_global_log_level2(value):
 	global global_log_level2
 	global_log_level2 = value
 
+# 取得 beacon frame 的 ssid func.
+def get_tlv_value(p, typee):
+	if not p.haslayer(Dot11Elt): return None
+	el = p[Dot11Elt]
+	while isinstance(el, Dot11Elt):
+		if el.ID == typee:
+			return el.info.decode()
+		el = el.payload
+	return None
+
 #### Utility ####
 def call_macchanger(iface, macaddr):
 	try:

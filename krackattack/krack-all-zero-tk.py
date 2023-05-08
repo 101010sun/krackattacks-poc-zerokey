@@ -17,17 +17,6 @@ from wpaspy import Ctrl
 
 global_log_level = INFO
 
-
-# 取得 beacon frame 的 ssid func.
-def get_tlv_value(p, typee):
-	if not p.haslayer(Dot11Elt): return None
-	el = p[Dot11Elt]
-	while isinstance(el, Dot11Elt):
-		if el.ID == typee:
-			return el.info.decode()
-		el = el.payload
-	return None
-
 # 紀錄網路的 config
 class NetworkConfig():
 	def __init__(self):
@@ -718,7 +707,7 @@ if __name__ == "__main__":
 
 	global_log_level = max(ALL, global_log_level - args.debug)
 	set_global_log_level2(max(ALL, global_log_level - args.debug))
-	
+
 	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
 	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
