@@ -215,11 +215,18 @@ class MitmSocket(L2Socket):
 	def set_channel(self, channel):
 		subprocess.check_output(["iw", self.iface, "set", "channel", str(channel)])
 
-	def send(self, p):
+	def get_channel_hex(self, channel):
+		return '\\x' + hex(channel)[2:].zfill(2)
+
+	def send(self, p, channel):
 		# 所有送出去的封包都要加 radiotap
 		p[Dot11].FCfield |= 0x20
-		L2Socket.send(self, RadioTap()/p)
-		if self.pcap: self.pcap.write(RadioTap()/p)
+		rt = RadioTap(
+			len=18,
+			present='Flags+Rate+Channel+dBm_AntSignal+Antenna', 
+			notdecoded='\x00\x6c' + self.get_channel_hex(channel) + '\xc0\x00\xa0\xc0\x00\x00')
+		L2Socket.send(self, rt/p)
+		if self.pcap: self.pcap.write(rt/p)
 		log(DEBUG, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 
 	def _strip_fcs(self, p):
