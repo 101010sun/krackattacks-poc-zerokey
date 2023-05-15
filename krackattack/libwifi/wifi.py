@@ -225,7 +225,7 @@ class MitmSocket(L2Socket):
 			len=18,
 			present='Flags+Rate+Channel+dBm_AntSignal+Antenna', 
 			notdecoded='\x00\x6c' + self.get_channel_hex(channel) + '\xc0\x00\xa0\xc0\x00\x00')
-		L2Socket.sendp(self, rt/p)
+		L2Socket.send(self, rt/p)
 		if self.pcap: self.pcap.write(rt/p)
 		log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(rt/p)))
 
