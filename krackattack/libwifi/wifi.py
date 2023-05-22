@@ -222,10 +222,10 @@ class MitmSocket(L2Socket):
 		# 所有送出去的封包都要加 radiotap
 		p[Dot11].FCfield |= 0x20
 		if(set_radio):
-			rt = RadioTap(
-				len=18,
-				present='Flags+Rate+Channel+dBm_AntSignal+Antenna', 
-				notdecoded='\x00\x6c' + self.get_channel_hex(channel) + '\xc0\x00\xa0\xc0\x00\x00')
+			# len=18,
+			# present='Flags+Rate+Channel+dBm_AntSignal+Antenna', 
+			# notdecoded='\x00\x6c' + self.get_channel_hex(channel) + '\xc0\x00\xa0\xc0\x00\x00'
+			rt = RadioTap()
 			L2Socket.send(self, rt/p)
 			if self.pcap: self.pcap.write(rt/p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
