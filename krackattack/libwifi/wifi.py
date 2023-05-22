@@ -253,7 +253,7 @@ class MitmSocket(L2Socket):
 				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 			if(channel == 11):	
 				rt = RadioTap(len=18,
-					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RX_flags', 
+					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
 					notdecoded='\x10\x02' + self.get_channel_hex(channel) + '\xa0\x00\x00')
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
