@@ -229,7 +229,6 @@ class MitmSocket(L2Socket):
 			L2Socket.send(self, rt/p)
 			if self.pcap: self.pcap.write(rt/p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
-			print(p[Dot11].FCfield)
 		else:
 			L2Socket.send(self, p)
 			if self.pcap: self.pcap.write(p)

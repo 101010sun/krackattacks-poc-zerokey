@@ -473,7 +473,6 @@ class KRAckAttack():
 			# 檢查是不是新的client端，that we can MitM
 			if p.haslayer(Dot11Auth):
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
-				print(p.FCfield)
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].mark_got_mitm()
 				client = self.clients[p.addr2]
