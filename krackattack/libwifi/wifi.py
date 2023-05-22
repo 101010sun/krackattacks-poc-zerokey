@@ -312,6 +312,7 @@ class MitmSocket(L2Socket):
 			return None, None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
+		p.summary()
 		result = self._strip_fcs(p)
 		return result, p
 
