@@ -220,7 +220,7 @@ class MitmSocket(L2Socket):
 
 	def send(self, p, set_radio, channel):
 		# 所有送出去的封包都要加 radiotap
-		p[Dot11].FCfield |= 0x20
+		p[Dot11].FCfield |= 0x00
 		if(set_radio):
 			# len=18,
 			# present='Flags+Rate+Channel+dBm_AntSignal+Antenna', 
