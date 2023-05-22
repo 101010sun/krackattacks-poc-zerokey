@@ -246,7 +246,7 @@ class MitmSocket(L2Socket):
 		if(set_radio):
 			if(channel == 3):	
 				rt = RadioTap(len=18,
-					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RX_flags', 
+					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
 					notdecoded='\x10\x30' + self.get_channel_hex(channel) + '\xc0\x00\x00')
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
