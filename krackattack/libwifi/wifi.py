@@ -253,7 +253,7 @@ class MitmSocket(L2Socket):
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
 				rt.Rate = 1.0
 				rt.ChannelFrequency = int(self.get_channel_freq(channel))
-				rt.ChannelFlags = 0x00a0
+				rt.ChannelFlags = 10
 				rt.dBm_AntSignal = -60
 				rt.Antenna = 0
 				rt.RXFlags = 0
@@ -265,7 +265,7 @@ class MitmSocket(L2Socket):
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
 				rt.Rate = 1.0 
 				rt.ChannelFrequency = int(self.get_channel_freq(channel))
-				rt.ChannelFlags = 0x00a0
+				rt.ChannelFlags = 10
 				rt.dBm_AntSignal = -52
 				rt.Antenna = 0
 				rt.RXFlags = 0
