@@ -267,7 +267,7 @@ class MitmSocket(L2Socket):
 				rt.ChannelFrequency = self.get_channel_hex(channel)
 				rt.ChannelFlags = 0x00a0
 				rt.dBm_AntSignal = -52
-				rt.Antenna = 0
+				rt.Antenna = 0x0
 				rt.RXFlags = 0x00
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
