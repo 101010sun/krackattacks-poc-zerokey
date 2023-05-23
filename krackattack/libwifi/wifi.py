@@ -271,8 +271,9 @@ class MitmSocket(L2Socket):
 			if(channel == 3):	
 				rt = RadioTap()
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
-				rt.rate = 1.0
-				rt.channel = channel
+				rt.Rate = 1.0
+				rt.ChannelFrequency = self.get_channel_freq(channel)
+				rt.ChannelFlags = 0x00a0
 				rt.dBm_AntSignal = -60
 				rt.antenna = 0
 				rt.RXFlags = 0
@@ -282,10 +283,11 @@ class MitmSocket(L2Socket):
 			if(channel == 11):	
 				rt = RadioTap()
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
-				rt.rate = 1.0 
-				rt.channel = channel
+				rt.Rate = 1.0 
+				rt.ChannelFrequency = self.get_channel_freq(channel)
+				rt.ChannelFlags = 0x00a0
 				rt.dBm_AntSignal = -52
-				rt.antenna = 0
+				rt.Antenna = 0
 				rt.RXFlags = 0
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
