@@ -216,28 +216,8 @@ class MitmSocket(L2Socket):
 		subprocess.check_output(["iw", self.iface, "set", "channel", str(channel)])
 
 	def get_channel_hex(self, channel):
-		if(channel == 1):
-			return '\x6c\x09'
-		elif(channel == 2):
-			return '\x71\x09'
-		elif(channel == 3):
-			return '\x76\x09'
-		elif(channel == 4):
-			return '\x7b\x09'
-		elif(channel == 5):
-			return '\x80\x09'
-		elif(channel == 6):
-			return '\x85\x09'
-		elif(channel == 7):
-			return '\x8a\x09'
-		elif(channel == 8):
-			return '\x8f\x09'
-		elif(channel == 9):
-			return '\x94\x09'
-		elif(channel == 10):
-			return '\x99\x09'
-		elif(channel == 11):
-			return '\x9e\x09'
+		channel_hex = hex(channel)
+		return channel_hex
 
 	def get_channel_freq(self, channel):
 		if(channel == 1):
@@ -272,7 +252,7 @@ class MitmSocket(L2Socket):
 				rt = RadioTap()
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
 				rt.Rate = 1.0
-				rt.ChannelFrequency = self.get_channel_freq(channel)
+				rt.ChannelFrequency = self.get_channel_hex(channel)
 				rt.ChannelFlags = 0x00a0
 				rt.dBm_AntSignal = -60
 				rt.antenna = 0
@@ -284,7 +264,7 @@ class MitmSocket(L2Socket):
 				rt = RadioTap()
 				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
 				rt.Rate = 1.0 
-				rt.ChannelFrequency = self.get_channel_freq(channel)
+				rt.ChannelFrequency = self.get_channel_hex(channel)
 				rt.ChannelFlags = 0x00a0
 				rt.dBm_AntSignal = -52
 				rt.Antenna = 0
