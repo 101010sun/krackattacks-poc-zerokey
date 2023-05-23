@@ -239,29 +239,67 @@ class MitmSocket(L2Socket):
 		elif(channel == 11):
 			return '\x9e\x09'
 
+	def get_channel_freq(self, channel):
+		if(channel == 1):
+			return 2412
+		elif(channel == 2):
+			return 2417
+		elif(channel == 3):
+			return 2422
+		elif(channel == 4):
+			return 2427
+		elif(channel == 5):
+			return 2432
+		elif(channel == 6):
+			return 2437
+		elif(channel == 7):
+			return 2442
+		elif(channel == 8):
+			return 2447
+		elif(channel == 9):
+			return 2452
+		elif(channel == 10):
+			return 2457
+		elif(channel == 11):
+			return 2462
+
 
 	def send(self, p, set_radio, channel):
 		# 所有送出去的封包都要加 radiotap
 		p[Dot11].FCfield |= 0x00
 		if(set_radio):
-			# if(channel == 3):	
-			# 	rt = RadioTap(len=18,
-			# 		present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
-			# 		notdecoded='\x10\x30' + self.get_channel_hex(channel) + '\xc0\x00\x00')
-			# 	L2Socket.send(self, rt/p)
-			# 	if self.pcap: self.pcap.write(rt/p)
-			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
-			# if(channel == 11):	
-			# 	rt = RadioTap(len=18,
-			# 		present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
-			# 		notdecoded='\x10\x02' + self.get_channel_hex(channel) + '\xa0\x00\x00')
-			# 	L2Socket.send(self, rt/p)
-			# 	if self.pcap: self.pcap.write(rt/p)
-			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
-			rt  = RadioTap()
-			L2Socket.send(self, rt/p)
-			if self.pcap: self.pcap.write(rt/p)
-			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			if(channel == 3):	
+				rt = RadioTap()
+				rt.present = (
+					RadioTap.present_flag.RATE | 
+					RadioTap.present_flag.CHANNEL | 
+					RadioTap.present_flag.DBM_ANT_SIGNAL | 
+					RadioTap.present_flag.ANTENNA | 
+					RadioTap.present_flag.RX_FLAGS
+				)
+				radiotap.channel = Channel(freq=self.get_channel_freq(channel), flags="")
+				radiotap.dBm_AntSignal = -60
+				radiotap.antenna = 0
+				radiotap.RXFlags = 0
+				L2Socket.send(self, rt/p)
+				if self.pcap: self.pcap.write(rt/p)
+				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			if(channel == 11):	
+				rt = RadioTap()
+				rt.present = (
+					RadioTap.present_flag.RATE | 
+					RadioTap.present_flag.CHANNEL | 
+					RadioTap.present_flag.DBM_ANT_SIGNAL | 
+					RadioTap.present_flag.ANTENNA | 
+					RadioTap.present_flag.RX_FLAGS
+				)
+				radiotap.channel = Channel(freq=self.get_channel_freq(channel), flags="")
+				radiotap.dBm_AntSignal = -23
+				radiotap.antenna = 0
+				radiotap.RXFlags = 0
+				L2Socket.send(self, rt/p)
+				if self.pcap: self.pcap.write(rt/p)
+				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 		else:
 			L2Socket.send(self, p)
 			if self.pcap: self.pcap.write(p)
