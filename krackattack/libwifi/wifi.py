@@ -270,33 +270,21 @@ class MitmSocket(L2Socket):
 		if(set_radio):
 			if(channel == 3):	
 				rt = RadioTap()
-				rt.present = (
-					RadioTap.Rate | 
-					RadioTap.Channel | 
-					RadioTap.DBMAntennaSignal | 
-					RadioTap.Antenna | 
-					RadioTap.RxFlags
-				)
-				radiotap.channel = Channel(freq=self.get_channel_freq(channel), flags="")
-				radiotap.dBm_AntSignal = -60
-				radiotap.antenna = 0
-				radiotap.RXFlags = 0
+				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
+				rt.channel = Channel(freq=self.get_channel_freq(channel), flags="")
+				rt.dBm_AntSignal = -60
+				rt.antenna = 0
+				rt.RXFlags = 0
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
 				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 			if(channel == 11):	
 				rt = RadioTap()
-				rt.present = (
-					RadioTap.Rate | 
-					RadioTap.Channel | 
-					RadioTap.DBMAntennaSignal | 
-					RadioTap.Antenna | 
-					RadioTap.RxFlags
-				)
-				radiotap.channel = Channel(freq=self.get_channel_freq(channel), flags="")
-				radiotap.dBm_AntSignal = -23
-				radiotap.antenna = 0
-				radiotap.RXFlags = 0
+				rt.present = 'Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags'
+				rt.channel = Channel(freq=self.get_channel_freq(channel), flags="")
+				rt.dBm_AntSignal = -23
+				rt.antenna = 0
+				rt.RXFlags = 0
 				L2Socket.send(self, rt/p)
 				if self.pcap: self.pcap.write(rt/p)
 				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
