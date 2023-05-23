@@ -244,20 +244,24 @@ class MitmSocket(L2Socket):
 		# 所有送出去的封包都要加 radiotap
 		p[Dot11].FCfield |= 0x00
 		if(set_radio):
-			if(channel == 3):	
-				rt = RadioTap(len=18,
-					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
-					notdecoded='\x10\x30' + self.get_channel_hex(channel) + '\xc0\x00\x00')
-				L2Socket.send(self, rt/p)
-				if self.pcap: self.pcap.write(rt/p)
-				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
-			if(channel == 11):	
-				rt = RadioTap(len=18,
-					present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
-					notdecoded='\x10\x02' + self.get_channel_hex(channel) + '\xa0\x00\x00')
-				L2Socket.send(self, rt/p)
-				if self.pcap: self.pcap.write(rt/p)
-				log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			# if(channel == 3):	
+			# 	rt = RadioTap(len=18,
+			# 		present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
+			# 		notdecoded='\x10\x30' + self.get_channel_hex(channel) + '\xc0\x00\x00')
+			# 	L2Socket.send(self, rt/p)
+			# 	if self.pcap: self.pcap.write(rt/p)
+			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			# if(channel == 11):	
+			# 	rt = RadioTap(len=18,
+			# 		present='Flags+Rate+Channel+dBm_AntSignal+Antenna+RXFlags', 
+			# 		notdecoded='\x10\x02' + self.get_channel_hex(channel) + '\xa0\x00\x00')
+			# 	L2Socket.send(self, rt/p)
+			# 	if self.pcap: self.pcap.write(rt/p)
+			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			rt  = RadioTap()
+			L2Socket.send(self, rt/p)
+			if self.pcap: self.pcap.write(rt/p)
+			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 		else:
 			L2Socket.send(self, p)
 			if self.pcap: self.pcap.write(p)
@@ -312,7 +316,6 @@ class MitmSocket(L2Socket):
 			return None, None
 		else:
 			log(ALL, "%s: Received frame: %s" % (self.iface, dot11_to_str(p)))
-		p.summary()
 		result = self._strip_fcs(p)
 		return result, p
 
