@@ -192,7 +192,7 @@ def construct_csa(channel, apmac, count=1, target=None):
 	# payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
 	# return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
 	csa_ie = Dot11Elt(ID='DSset', info=chr((switch_mode << 7) | new_chan_num))
-	csa_counter_ie = Dot11Elt(ID='csa_counterr', info=chr(switch_count))
+	csa_counter_ie = Dot11Elt(ID='csa_counter', info=chr(switch_count))
 	if (target == None):
 		csa_beacon = Dot11(type=0, subtype=8, FCfield='from-DS+to-DS', addr1=target, addr2=apmac, addr3=apmac) / Dot11Beacon() / csa_ie / csa_counter_ie
 	else:
