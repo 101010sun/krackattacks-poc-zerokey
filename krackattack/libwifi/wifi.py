@@ -191,12 +191,12 @@ def construct_csa(channel, count=1):
 
 	# Contruct the IE
 	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
-	return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
+	return Dot11Elt(ID='Channel Switch', info=payload)
 
 def append_csa(p, channel, count=1):
-	p = p.copy()
+	p2 = p.copy()
 
-	el = p[Dot11Elt]
+	el = p2[Dot11Elt]
 	prevel = None
 	while isinstance(el, Dot11Elt):
 		prevel = el
@@ -204,7 +204,7 @@ def append_csa(p, channel, count=1):
 
 	prevel.payload = construct_csa(channel, count)
 
-	return p
+	return p2
 
 
 #### Man-in-the-middle Code ####
