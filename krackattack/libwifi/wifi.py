@@ -212,7 +212,7 @@ def append_csa(p, channel, count=1):
 		prevel = el
 		el = el.payload
 	prevel.payload = construct_csa(channel, count)
-	return p
+	return prevel
 
 
 #### Man-in-the-middle Code ####
