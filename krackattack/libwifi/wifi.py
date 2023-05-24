@@ -189,8 +189,13 @@ def construct_csa(channel, count=1):
 	new_chan_num = channel	# Channel it should switch to
 	switch_count = count	# Immediately make the station switch
 	# Contruct the IE
-	payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
-	return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
+	# payload = struct.pack("<BBB", switch_mode, new_chan_num, switch_count)
+	# return Dot11Elt(ID=IEEE_TLV_TYPE_CSA, info=payload)
+	csa_ie = Dot11Elt(ID='DSset', info=chr((switch_mode << 7) | new_chan_num))
+	csa_counter_ie = Dot11Elt(ID='CSA Counter', info=chr(switch_count))
+	csa_beacon = Dot11(type=0, subtype=8, FCfield='from-DS+to-DS') / Dot11Beacon() / csa_ie / csa_counter_ie
+	return csa_beacon
+
 
 def append_csa(p, channel, count=1):
 	p = p.copy()
