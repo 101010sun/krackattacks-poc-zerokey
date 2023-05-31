@@ -277,11 +277,11 @@ class MitmSocket(L2Socket):
 			# 	if self.pcap: self.pcap.write(rt/p)
 			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 			rt = RadioTap()
-			L2Socket.send(self, rt/p)
+			L2Socket.send(rt/p)
 			if self.pcap: self.pcap.write(rt/p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 		else:
-			L2Socket.send(self, p)
+			L2Socket.send(p)
 			if self.pcap: self.pcap.write(p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 
