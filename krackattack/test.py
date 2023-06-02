@@ -1,11 +1,9 @@
-from scapy.all import *
-
-def send_test_packet(interface):
+def send_packet(destination_mac, interface):
     # 创建L2Socket对象
     socket = L2Socket(iface=interface)
 
-    # 构建测试封包，这里使用一个简单的ARP请求作为示例
-    packet = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst="192.168.0.1")
+    # 构建要发送的封包
+    packet = Ether(dst=destination_mac) / Raw(load="Hello, target!")
 
     try:
         # 发送封包
@@ -14,8 +12,9 @@ def send_test_packet(interface):
     except Exception as e:
         print("Failed to send packet:", e)
 
-# 指定要测试的网络接口
+# 指定要发送封包的目标MAC地址和网络接口
+destination_mac = "bc:ee:7b:e7:ab:54"  # 替换为目标设备的MAC地址
 interface = "wlan0"  # 替换为您的网络接口名称
 
-# 调用函数发送测试封包
-send_test_packet(interface)
+# 调用函数发送封包
+send_packet(destination_mac, interface)
