@@ -277,9 +277,11 @@ class MitmSocket(L2Socket):
 			# 	if self.pcap: self.pcap.write(rt/p)
 			# 	log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
 			rt = RadioTap()
-			rt.present = 'Flags+Channel'
+			rt.present = 'Flags+Channel+Antenna+RXFlags'
 			rt.ChannelFrequency = int(self.get_channel_freq(channel))
 			rt.ChannelFlags = 0x00a0
+			rt.Antenna = 0x00
+			rt.RXFlags = 0x0000
 			L2Socket.send(self, rt/p)
 			if self.pcap: self.pcap.write(rt/p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
