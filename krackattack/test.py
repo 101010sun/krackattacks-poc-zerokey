@@ -1,3 +1,5 @@
+from scapy.all import * 
+
 def send_packet(destination_mac, interface):
     # 创建L2Socket对象
     socket = L2Socket(iface=interface)
