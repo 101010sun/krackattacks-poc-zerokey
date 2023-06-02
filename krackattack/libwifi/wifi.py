@@ -285,6 +285,11 @@ class MitmSocket(L2Socket):
 			L2Socket.send(self, rt/p)
 			if self.pcap: self.pcap.write(rt/p)
 			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(p)))
+			
+			null_data = rt / Dot11(type=2, subtype=4) / Dot11QoS() / LLC() / Padding()
+			L2Socket.send(self, null_data)
+			if self.pcap: self.pcap.write(rt/p)
+			log(WARNING, "%s: Injected frame %s" % (self.iface, dot11_to_str(null_data)))
 		else:
 			L2Socket.send(self,p)
 			if self.pcap: self.pcap.write(p)
