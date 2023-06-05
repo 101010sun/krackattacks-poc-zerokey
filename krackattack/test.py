@@ -17,7 +17,7 @@ def send_80211_packet(destination_mac, interface):
 
 # 指定要发送封包的目标MAC地址和网络接口
 destination_mac = "bc:ee:7b:e7:ab:54"  # 替换为目标设备的MAC地址
-interface = "wlan0"  # 替换为您的网络接口名称
+interface = "wlan2"  # 替换为您的网络接口名称
 
 # 调用函数发送封包
 send_80211_packet(destination_mac, interface)
