@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # wpa_supplicant/hostapd control interface using Python
 # Copyright (c) 2013, Jouni Malinen <j@w1.fi>

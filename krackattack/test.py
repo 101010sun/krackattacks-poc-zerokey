@@ -10,7 +10,7 @@ def send_80211_packet(destination_mac, interface):
     try:
         # 发送封包
         socket.send(packet)
-        send(packet, interface)
+        send(packet, iface = interface)
         print("Packet sent successfully!")
     except Exception as e:
         print("Failed to send packet:", e)
