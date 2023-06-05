@@ -481,7 +481,7 @@ class KRAckAttack():
 				will_forward = True
 			# Always display all frames sent by the targeted client
 			elif p.addr2 == self.clientmac:
-				if p.addr2 in self.clinets:
+				if p.addr2 in self.clients:
 					client = self.clients[p.addr2]
 					will_forward = client.should_forward(p, args.group)
 				else: 
