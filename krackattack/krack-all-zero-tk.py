@@ -352,8 +352,8 @@ class KRAckAttack():
 
 			client.save_iv_keystream(iv, keystream)
 
-		elif p.haslayer(Dot11CCMP):
-			print(p.show())
+		# elif p.haslayer(Dot11CCMP):
+			# print(p.show())
 
 	def handle_to_client_groupkey(self, client, p):
 		if not args.group: return False
