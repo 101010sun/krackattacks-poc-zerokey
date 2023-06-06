@@ -327,7 +327,7 @@ class KRAckAttack():
 		elif p.haslayer(Dot11CCMP):
 			plaintext = "\xaa\xaa\x03\x00\x00\x00"
 			encrypted = p[Dot11CCMP].data
-			keystream = xorstr(plaintext, encrypted)
+			keystream = xorstr(plaintext, str(encrypted))
 
 		iv = dot11_get_iv(p)
 		if iv <= 1: log(DEBUG, "Ciphertext: " + encrypted.encode("hex"), showtime=False)
