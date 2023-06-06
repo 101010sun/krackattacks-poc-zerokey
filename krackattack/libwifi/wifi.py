@@ -75,29 +75,15 @@ def payload_to_iv(payload):
 
 def dot11_get_iv(p):
 	"""
-	Assume it's a CCMP frame. Old scapy can't handle Extended IVs.
-	This code only works for CCMP frames.
+	This function assumes the frame is encrypted using either CCMP or WEP.
+	It does not work for other encrypion protocol (e.g. TKIP).
 	"""
 	if Dot11CCMP in p:
 		payload = raw(p[Dot11CCMP])
 		return payload_to_iv(payload)
-
-	elif Dot11TKIP in p:
-		# Scapy uses a heuristic to differentiate CCMP/TKIP and this may be wrong.
-		# So even when we get a Dot11TKIP frame, we should treat it like a Dot11CCMP frame.
-		payload = raw(p[Dot11TKIP])
-		return payload_to_iv(payload)
-
-	if Dot11CCMP in p:
-		payload = raw(p[Dot11CCMP])
-		return payload_to_iv(payload)
 	elif Dot11TKIP in p:
 		payload = raw(p[Dot11TKIP])
 		return payload_to_iv(payload)
-	elif Dot11Encrypted in p:
-		payload = raw(p[Dot11Encrypted])
-		return payload_to_iv(payload)
-
 	elif Dot11WEP in p:
 		wep = p[Dot11WEP]
 		if wep.keyid & 32:
@@ -105,10 +91,11 @@ def dot11_get_iv(p):
 			return orb(wep.iv[0]) + (orb(wep.iv[1]) << 8) + (struct.unpack(">I", wep.wepdata[:4])[0] << 16)
 		else:
 			return orb(wep.iv[0]) + (orb(wep.iv[1]) << 8) + (orb(wep.iv[2]) << 16)
-
+	elif Dot11Encrypted in p:
+		payload = raw(p[Dot11Encrypted])
+		return payload_to_iv(payload)
 	elif p.FCfield & 0x40:
 		return payload_to_iv(p[Raw].load)
-
 	else:
 		return None
 
