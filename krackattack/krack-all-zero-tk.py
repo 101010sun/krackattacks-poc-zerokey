@@ -341,7 +341,7 @@ class KRAckAttack():
 					return
 
 			iv = dot11_get_iv(p)
-			if iv <= 1: log(STATUS, "Ciphertext: " + encrypted, showtime=False)
+			if iv <= 1: log(STATUS, "Ciphertext: " + encrypted.decode(), showtime=False)
 
 			if client.is_iv_reused(iv):
 				# If the same keystream is reused, we have a normal key reinstallation attack
