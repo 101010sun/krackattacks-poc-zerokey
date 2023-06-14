@@ -326,8 +326,9 @@ class KRAckAttack():
 			# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes
 				encrypted = p[Dot11WEP].wepdata[4:4:4+len(plaintext)]
 			else:
-				encrypted = p[Dot11CCMP].data[:len(plaintext)]
-				
+				print(p[Dot11CCMP].data[:len(plaintext)])
+				# encrypted = p[Dot11CCMP].data[:len(plaintext)]
+
 			keystream = xorstr(plaintext, encrypted)
 
 			iv = dot11_get_iv(p)
