@@ -83,7 +83,7 @@ class NetworkConfig():
 
 	def find_rogue_channel(self):
 		# 強盜 AP 頻道不是在 1 就是 11
-		self.rogue_channel = 1 if self.real_channel >= 6 else 11
+		self.rogue_channel = 1 if self.real_channel >= 6 else 8
 	
 	# hostapd.confg寫檔 
 	def write_config(self, iface):
