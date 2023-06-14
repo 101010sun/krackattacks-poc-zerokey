@@ -331,6 +331,8 @@ class KRAckAttack():
 
 					plaintext = b"\xaa\xaa\x03\x00\x00\x00"
 					encrypted = p[Dot11CCMP].data[:len(plaintext)]
+					print('encrypted= ', end='')
+					print(encrypted)
 					tmp = []
 					for i in range(len(plaintext)):
 						tmp.append(plaintext[i]^encrypted[i])
