@@ -88,7 +88,7 @@ class NetworkConfig():
 	# hostapd.confg寫檔 
 	def write_config(self, iface):
 		TEMPLATE = """
-ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
+ctrl_interface=/home/sun/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
 ctrl_interface_group=root
 
 interface={iface}
