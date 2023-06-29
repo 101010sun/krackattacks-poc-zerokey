@@ -2,7 +2,7 @@
 set -e
 
 # Interfaces that are used
-INTERNET=eth0
+INTERNET=eth1
 #INTERNET=wlp5s0
 REPEATER=wlan3
 
