@@ -20,9 +20,6 @@ iptables -t nat -A POSTROUTING -o $INTERNET -j MASQUERADE
 iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i $REPEATER -o $INTERNET -j ACCEPT
 
-echo "[ ] Enabling SSLStrip rerouting"
-iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-
 echo "[ ] Starting DHCP and DNS service"
 
 echo ""

