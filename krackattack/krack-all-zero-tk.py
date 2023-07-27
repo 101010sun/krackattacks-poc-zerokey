@@ -717,8 +717,6 @@ if __name__ == "__main__":
 	parser.add_argument("-p", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
 	parser.add_argument("-d", "--debug", action="count", help="increase output verbosity", default=0)
 	parser.add_argument("--strict-echo-test", action='store_true')
-	parser.add_argument("--continuous-csa", help="Continuously send CSA beacons on the real channel (10 every second)", action='store_true')
-	parser.add_argument("--group", action='store_true')
 
 	args = parser.parse_args()
 
@@ -726,6 +724,6 @@ if __name__ == "__main__":
 	set_global_log_level2(max(ALL, global_log_level - args.debug))
 
 	print("\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
-	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
+	attack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump)
 	atexit.register(cleanup)
 	attack.run(strict_echo_test=args.strict_echo_test)
