@@ -349,7 +349,7 @@ class KRAckAttack():
                 # Otherwise the client likely installed a new key, i.e., probably an all-zero key
                 else:
                     log(STATUS, "SUCCESS! Nonce reuse detected (IV=%d), with usage of all-zero encryption key." % iv, color="green", showtime=False)
-                    log(STATUS, "檢測結果: 存在KRACK漏洞，且安裝為全零金鑰。", color="green", showtime=False)
+                    log(STATUS, "檢測結果: 存在KRACK漏洞且存在全零金鑰漏洞。", color="green", showtime=False)
 
                     
                     client.update_state(ClientState.Success_AllzeroKey)
