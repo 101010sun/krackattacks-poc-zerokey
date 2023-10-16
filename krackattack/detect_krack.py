@@ -138,7 +138,7 @@ wpa_passphrase={password}"""
             wmmadvertised=int(group_flag),
             wmmenabled=self.wmmenabled,
             hw=self.hw,
-            password=str(args.password))
+            password=str('12345678'))
 
 
 class ClientState():
@@ -830,8 +830,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "nic_rogue_ap", help="Wireless monitor interface that will run a rogue AP using a modified hostapd.")
     parser.add_argument("ssid", help="The SSID of the network to attack.")
-    parser.add_argument(
-        "password", help="The password of the network to attack.")
 
     # 選擇性參數
     parser.add_argument(
