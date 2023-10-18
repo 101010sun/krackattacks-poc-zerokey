@@ -745,8 +745,7 @@ class KRAckAttack():
         self.last_rogue_beacon = time.time()
         nextbeacon = time.time() + 0.01
         while True:
-            sel = select.select(
-                [self.sock_real, self.sock_rogue, self.hostapd.stdout], [], [], 0.1)
+            sel = select.select([self.sock_real, self.sock_rogue, self.hostapd.stdout], [], [], 0.1)
             if self.sock_real in sel[0]:
                 self.handle_rx_realchan()
             if self.sock_rogue in sel[0]:
