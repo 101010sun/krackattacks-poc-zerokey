@@ -55,7 +55,7 @@ if __name__ == "__main__":
         print("\n\t===[ channel-based MitM position by Mathy Vanhoef ]====\n")
         FakeAPAttack = FakeAP(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap,
                         args.nic_rogue_mon, args.ssid, args.password, args.group, args.target, args.dump, args.continuous_csa)
-        atexit.register(fakeApCleanUp, args=(FakeAPAttack))
+        atexit.register(fakeApCleanUp, FakeAPAttack)
         FakeAPAttack.run(strict_echo_test=args.strict_echo_test)
     # KRACK detection
     global_log_level = max(ALL, global_log_level - args.debug)
@@ -64,5 +64,5 @@ if __name__ == "__main__":
         "\n\t===[ KRACK Attacks against Linux/Android by Mathy Vanhoef ]====\n")
     KrackAttack = KRAckAttack(args.nic_real_mon, args.nic_real_clientack,
                          args.nic_rogue_ap, args.nic_rogue_mon, args.ssid, args.target, args.dump)
-    atexit.register(krackAttackCleanUp, args=(KrackAttack))
+    atexit.register(krackAttackCleanUp, KrackAttack)
     KrackAttack.run(strict_echo_test=args.strict_echo_test)
