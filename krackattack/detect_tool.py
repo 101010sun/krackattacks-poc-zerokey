@@ -4,9 +4,9 @@ import atexit
 import logging
 import argparse
 from scapy.all import *
-from krackattack.libwifi import *
-from krackattack.detect_fakeap import FakeAP
-from krackattack.detect_krack import KRAckAttack
+from libwifi import *
+from detect_fakeap import FakeAP
+from detect_krack import KRAckAttack
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
