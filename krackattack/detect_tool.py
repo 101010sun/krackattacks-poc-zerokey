@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--target", help="Specifically target the client with the given MAC address.")
     parser.add_argument(
-        "-d", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
+        "-c", "--dump", help="Dump captured traffic to the pcap files <this argument name>.<nic>.pcap")
     parser.add_argument("-d", "--debug", action="count",
                         help="increase output verbosity", default=0)
     parser.add_argument(
