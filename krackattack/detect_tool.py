@@ -54,7 +54,7 @@ if __name__ == "__main__":
     if args.password is not None:
         print("\n\t===[ channel-based MitM position by Mathy Vanhoef ]====\n")
         FakeAPAttack = FakeAP(args.nic_real_mon, args.nic_real_clientack, args.nic_rogue_ap,
-                        args.nic_rogue_mon, args.ssid, args.target, args.dump, args.continuous_csa)
+                        args.nic_rogue_mon, args.ssid, args.password, args.group, args.target, args.dump, args.continuous_csa)
         atexit.register(fakeApCleanUp, args=(FakeAPAttack))
         FakeAPAttack.run(strict_echo_test=args.strict_echo_test)
     # KRACK detection
