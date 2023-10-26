@@ -642,7 +642,7 @@ def cleanup():
 if __name__ == "__main__":
     description = textwrap.dedent(
         """
-        Key Reinstallation Attacks (KRACKs) by Mathy Vanhoef
+        Key Reinstallation Attacks (KRACKs) by Mathy Vanhoef in WPA3
         -----------------------------------------------------------
           - Uses CSA beacons to obtain channel-based MitM position
           - Can detect and handle wpa_supplicant all-zero key installations""")
